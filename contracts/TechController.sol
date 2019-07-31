@@ -5,6 +5,9 @@ pragma solidity ^0.5;
 
  */
 import "./TokenController.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/roles/WhitelistAdminRole.sol";
+import "@openzeppelin/contracts/access/roles/WhitelistedRole.sol";
 
 // Minime interface
 contract IMiniMeToken {
@@ -13,10 +16,7 @@ contract IMiniMeToken {
     /// @param _amount The quantity of tokens generated
     /// @return True if the tokens are generated correctly
     function generateTokens(address _owner, uint _amount) public returns (bool);
-
 }
-
-
 
 // // Taken from Zeppelin's standard contracts.
 // contract ERC20 {
@@ -31,17 +31,18 @@ contract IMiniMeToken {
 //   event Approval(address indexed owner, address indexed spender, uint value);
 // }
 
-contract TechController is TokenController {
-    IMiniMeToken public tokenContract;   // The new token
-    // ERC20 public arcToken;              // The ARC token address
+contract TechController is TokenController, WhitelistAdminRole, WhitelistedRole {
+    IMiniMeToken public techToken;   // The new token
+    IERC20 public contributionToken;              // The contribution token address (DAI)
+    address public contributionDestination;
+    uint256 public totalContribution;
 
-    // function SWTConverter(
-    //     address _tokenAddress,          // the new MiniMe token address
-    //     address _arctokenaddress        // the original ARC token address
-    // ) {
-    //     tokenContract = MiniMeToken(_tokenAddress); // The Deployed Token Contract
-    //     arcToken = ERC20(_arctokenaddress);
-    // }
+    mapping(address => uint) public techTokencaps;
+
+    constructor(address _contributionToken,address _contributionDestination) public {
+        contributionToken = IERC20(_contributionToken);
+        contributionDestination = _contributionDestination;
+    }
 
 /////////////////
 // TokenController interface
@@ -57,7 +58,7 @@ contract TechController is TokenController {
 
 /// @return False if the controller does not authorize the transfer
     function onTransfer(address /* _from */, address /* _to */ , uint /* _amount */) public returns(bool) {
-        return true;
+        return false;
     }
 
 /// @notice Notifies the controller about an approval, for this SWTConverter all
@@ -70,6 +71,42 @@ contract TechController is TokenController {
         return true;
     }
 
+    /// @notice returns multiplier * 100 of current stage 
+    function getMultiplier() public returns (uint256) {
+        if (totalContribution < 984000 * 10e18){
+            return 250;
+        }
+        if (totalContribution < 1710000 * 10e18){
+            return 200;
+        }
+        if (totalContribution < 2850000 * 10e18){
+            return 150;
+        }
+        return 100;
+    }
+
+    /// @notice returns amount of allowed donation still in this stage 
+    function getAllowedContribution(uint256 _contributionAmount) public {
+        // if (totalContribution)
+    }
+
+
+    function contribute(uint256 _contributionAmount,address _recepient) public onlyWhitelisted {
+
+        uint256 _amount = getMultiplier() * _contributionAmount / 100;
+
+        // mint new Tech tokens
+        if (!techToken.generateTokens(_recepient, _amount)) {
+            revert("minting tokens failed");
+        }
+
+    }
+
+    function whitelist(address _account, uint256 _maxcontribution) public onlyWhitelistAdmin {
+        addWhitelisted(_account);
+        techTokencaps[_account] = _maxcontribution;
+        
+    }
 
 // /// @notice converts ARC tokens to new SWT tokens and forwards ARC to the vault address.
 // /// @param _amount The amount of ARC to convert to SWT
@@ -82,7 +119,7 @@ contract TechController is TokenController {
 //         }
 
 //         // mint new SWT tokens
-//         if (!tokenContract.generateTokens(msg.sender, _amount)) {
+//         if (!techToken.generateTokens(msg.sender, _amount)) {
 //             throw;
 //         }
 //     }
