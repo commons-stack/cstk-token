@@ -42,9 +42,8 @@ contract TechController is TokenController,Ownable, WhitelistAdminRole, Whitelis
     uint256 public currentMultiplier;
     uint256 public currentHardCap;
 
-
-    mapping(address => uint) public contributionCap;
-    mapping(address => uint) public contributionSum;
+    mapping(address => uint256) public contributionCap;
+    mapping(address => uint256) public contributionSum;
 
     constructor(address _techToken,address _contributionToken,address _contributionDestination) public {
         techToken = IMiniMeToken(_techToken);
@@ -60,12 +59,12 @@ contract TechController is TokenController,Ownable, WhitelistAdminRole, Whitelis
 
     // configure a new contribution phase
     function startContributionPhase(uint256 _newMultiplier, uint256 _newHardCap) public onlyOwner {
-
         require(_newMultiplier>0,"multiplier not valid");
         require(_newHardCap>totalContribution,"hardcap not valid");
 
         currentMultiplier = _newMultiplier;
         currentHardCap = _newHardCap;
+
     }
 
     // pass on controller
@@ -97,11 +96,11 @@ contract TechController is TokenController,Ownable, WhitelistAdminRole, Whitelis
 
     function contribute(uint256 _contributionAmount,address _recepient) public onlyWhitelisted {
 
-        require(currentMultiplier > 0,"multiplier not valid");
+        require(currentMultiplier>0,"multiplier not valid");
         require(currentHardCap > totalContribution,"hardcap not valid");
 
-        // require(totalContribution + _contributionAmount <= currentHardCap, "donation over hard-cap");
-        // require(contributionSum[msg.sender] + _contributionAmount <= contributionCap[msg.sender], "donation over personal cap");
+        require(totalContribution + _contributionAmount <= currentHardCap, "donation over hard-cap");
+        require(contributionSum[msg.sender] + _contributionAmount <= contributionCap[msg.sender], "donation over personal cap");
 
         uint256 receiveAmount = _contributionAmount * currentMultiplier / 100;
 
