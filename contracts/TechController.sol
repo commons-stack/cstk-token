@@ -8,6 +8,7 @@ import "./TokenController.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/roles/WhitelistAdminRole.sol";
 import "@openzeppelin/contracts/access/roles/WhitelistedRole.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 
 // Minime interface
 contract IMiniMeToken {
@@ -16,6 +17,7 @@ contract IMiniMeToken {
     /// @param _amount The quantity of tokens generated
     /// @return True if the tokens are generated correctly
     function generateTokens(address _owner, uint _amount) public returns (bool);
+    function changeController(address _newController) public;
 }
 
 // // Taken from Zeppelin's standard contracts.
@@ -31,39 +33,59 @@ contract IMiniMeToken {
 //   event Approval(address indexed owner, address indexed spender, uint value);
 // }
 
-contract TechController is TokenController, WhitelistAdminRole, WhitelistedRole {
-    IMiniMeToken public techToken;   // The new token
-    IERC20 public contributionToken;              // The contribution token address (DAI)
-    address public contributionDestination;
+contract TechController is TokenController,Ownable, WhitelistAdminRole, WhitelistedRole {
+    IMiniMeToken public techToken;          // The new token
+    IERC20 public contributionToken;        // The contribution token address (DAI)
+    address public contributionDestination; // address where to send contributed tokens to
     uint256 public totalContribution;
 
-    mapping(address => uint) public techTokencaps;
+    uint256 public currentMultiplier;
+    uint256 public currentHardCap;
 
-    constructor(address _contributionToken,address _contributionDestination) public {
+
+    mapping(address => uint) public contributionCap;
+    mapping(address => uint) public contributionSum;
+
+    constructor(address _techToken,address _contributionToken,address _contributionDestination) public {
+        techToken = IMiniMeToken(_techToken);
         contributionToken = IERC20(_contributionToken);
         contributionDestination = _contributionDestination;
+        currentMultiplier = 0;
+        currentHardCap = 0;
     }
 
 /////////////////
 // TokenController interface
 /////////////////
 
+    // configure a new contribution phase
+    function startContributionPhase(uint256 _newMultiplier, uint256 _newHardCap) public onlyOwner {
 
- function proxyPayment(address /*_owner*/) public payable returns(bool) {
+        require(_newMultiplier>0,"multiplier not valid");
+        require(_newHardCap>totalContribution,"hardcap not valid");
+
+        currentMultiplier = _newMultiplier;
+        currentHardCap = _newHardCap;
+    }
+
+    // pass on controller
+    function passController(address _newController) public onlyOwner {
+        techToken.changeController(_newController);
+    }
+
+    function proxyPayment(address /*_owner*/) public payable returns(bool) {
         return false;
     }
 
-/// @notice Notifies the controller about a transfer, for this SWTConverter all
+/// @notice Notifies the controller about a transfer, for this controller all
 ///  transfers are allowed by default and no extra notifications are needed
-
 /// @return False if the controller does not authorize the transfer
     function onTransfer(address /* _from */, address /* _to */ , uint /* _amount */) public returns(bool) {
         return false;
     }
 
-/// @notice Notifies the controller about an approval, for this SWTConverter all
+/// @notice Notifies the controller about an approval, for this controller all
 ///  approvals are allowed by default and no extra notifications are needed
-
 /// @return False if the controller does not authorize the approval
     function onApprove(address /* _owner */, address /* _spender */, uint /* _amount */)
        public returns(bool)
@@ -71,58 +93,38 @@ contract TechController is TokenController, WhitelistAdminRole, WhitelistedRole 
         return true;
     }
 
-    /// @notice returns multiplier * 100 of current stage 
-    function getMultiplier() public returns (uint256) {
-        if (totalContribution < 984000 * 10e18){
-            return 250;
-        }
-        if (totalContribution < 1710000 * 10e18){
-            return 200;
-        }
-        if (totalContribution < 2850000 * 10e18){
-            return 150;
-        }
-        return 100;
-    }
-
-    /// @notice returns amount of allowed donation still in this stage 
-    function getAllowedContribution(uint256 _contributionAmount) public {
-        // if (totalContribution)
-    }
-
+    event Contributed(address indexed _sender,uint256 _contributionAmount,uint256 _receiveAmount);
 
     function contribute(uint256 _contributionAmount,address _recepient) public onlyWhitelisted {
 
-        uint256 _amount = getMultiplier() * _contributionAmount / 100;
+        require(currentMultiplier > 0,"multiplier not valid");
+        require(currentHardCap > totalContribution,"hardcap not valid");
+
+        // require(totalContribution + _contributionAmount <= currentHardCap, "donation over hard-cap");
+        // require(contributionSum[msg.sender] + _contributionAmount <= contributionCap[msg.sender], "donation over personal cap");
+
+        uint256 receiveAmount = _contributionAmount * currentMultiplier / 100;
+
+        // receive contribution token (DAI)
+        if (!contributionToken.transferFrom(msg.sender,contributionDestination,_contributionAmount)){
+            revert("receiving contribution token failed");
+        }
 
         // mint new Tech tokens
-        if (!techToken.generateTokens(_recepient, _amount)) {
+        if (!techToken.generateTokens(_recepient, receiveAmount)) {
             revert("minting tokens failed");
         }
+
+        contributionSum[msg.sender] = contributionSum[msg.sender] + _contributionAmount;
+        totalContribution += _contributionAmount;
+
+        emit Contributed(msg.sender,_contributionAmount,receiveAmount);
 
     }
 
     function whitelist(address _account, uint256 _maxcontribution) public onlyWhitelistAdmin {
         addWhitelisted(_account);
-        techTokencaps[_account] = _maxcontribution;
-        
+        contributionCap[_account] = _maxcontribution;
     }
-
-// /// @notice converts ARC tokens to new SWT tokens and forwards ARC to the vault address.
-// /// @param _amount The amount of ARC to convert to SWT
-//  function addWhitelist(uint _amount){
-
-//         // transfer ARC to the vault address. caller needs to have an allowance from
-//         // this controller contract for _amount before calling this or the transferFrom will fail.
-//         if (!arcToken.transferFrom(msg.sender, 0x0, _amount)) {
-//             throw;
-//         }
-
-//         // mint new SWT tokens
-//         if (!techToken.generateTokens(msg.sender, _amount)) {
-//             throw;
-//         }
-//     }
-
 
 }
