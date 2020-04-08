@@ -8,13 +8,17 @@ contract Registry is RegistryAbstract {
 
     constructor(address[] memory _admins) public RegistryAbstract(_admins) {}
 
-    function registerContributors(address[] memory wallets, uint256[] memory allowed) public {
+    function registerContributors(
+        address[] memory wallets,
+        uint256[] memory allowed
+    ) public {
         return _registerContributors(wallets, allowed);
     }
 
-    function _registerContributors(address[] memory wallets, uint256[] memory allowed)
-        internal
-    {
+    function _registerContributors(
+        address[] memory wallets,
+        uint256[] memory allowed
+    ) internal {
         require(wallets.length == allowed.length);
         for (uint256 i = 0; i < wallets.length; ++i) {
             if (wallets[i] != address(0)) {

@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/access/Roles.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 
+
 /**
  * @title AdminRole
  * @dev Admins are responsible for assigning and removing contributors.
@@ -16,7 +17,7 @@ contract AdminRole is Context, Ownable {
 
     Roles.Role private _admins;
 
-    constructor (address[] memory admins) internal Ownable() {
+    constructor(address[] memory admins) internal Ownable() {
         _addAdmin(_msgSender());
         emit AdminAdded(_msgSender());
         for (uint256 i = 0; i < admins.length; ++i) {
@@ -26,7 +27,10 @@ contract AdminRole is Context, Ownable {
     }
 
     modifier onlyAdmin() {
-        require(isAdmin(_msgSender()), "AdminRole: caller does not have the Admin role");
+        require(
+            isAdmin(_msgSender()),
+            "AdminRole: caller does not have the Admin role"
+        );
         _;
     }
 

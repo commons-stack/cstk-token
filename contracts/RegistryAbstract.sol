@@ -4,7 +4,6 @@ import "./AdminRole.sol";
 
 
 contract RegistryAbstract is AdminRole {
-
     constructor(address[] memory _admins) internal AdminRole(_admins) {}
 
     event ContributorAdded(address wallet);
