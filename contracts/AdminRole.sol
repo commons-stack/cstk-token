@@ -17,7 +17,7 @@ contract AdminRole is Context, Ownable {
 
     Roles.Role private _admins;
 
-    constructor(address[] memory admins) internal Ownable() {
+    constructor(address[] memory admins) internal {
         _addAdmin(_msgSender());
         emit AdminAdded(_msgSender());
         for (uint256 i = 0; i < admins.length; ++i) {

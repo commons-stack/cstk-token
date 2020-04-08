@@ -6,7 +6,7 @@ import "./RegistryAbstract.sol";
 contract Registry is RegistryAbstract {
     mapping(address => ContributorInfo) contributors;
 
-    constructor(address[] memory _admins) public RegistryAbstract(_admins) {}
+    constructor(address[] memory _admins) RegistryAbstract(_admins) public {}
 
     function registerContributors(
         address[] memory wallets,
