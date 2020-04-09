@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/commons-stack/tech-token#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "2.3.0",
+    "@openzeppelin/contracts": "^2.5.0",
     "truffle-hdwallet-provider": "^1.0.16",
     "truffle-privatekey-provider": "^1.3.0"
   }
