@@ -1,5 +1,6 @@
 build
-.secret
+.env
+.env.local
 package-lock.json
 
 #Buidler files
