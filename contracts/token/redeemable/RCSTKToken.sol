@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../registry/AdminRole.sol";
-import "../minime/MiniMeToken.sol";
+import "./TokenManager.sol";
 
 
 contract RCSTKToken is RedeemableToken, AdminRole {
@@ -15,7 +15,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         uint256 softCap,
         uint256 hardCap,
         address daiTokenAddress,
-        address payable cstkTokenAddress,
+        address payable cstkTokenManagerAddress,
         address[] memory _admins
     )
         public
@@ -34,7 +34,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             0
         );
         daitoken = IERC20(daiTokenAddress);
-        cstkToken = MiniMeToken(cstkTokenAddress);
+        cstkTokenManager = TokenManager(cstkTokenManagerAddress);
         newIteration(5, 2, 984000, 1250000);
         newIteration(2, 1, 796000, 1000000);
         newIteration(3, 2, 1170000, 1500000);
@@ -61,7 +61,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
     uint256 numIterations;
     mapping(uint256 => Iteration) iterations;
     IERC20 daitoken;
-    MiniMeToken cstkToken;
+    TokenManager cstkTokenManager;
 
     function newIteration(
         uint256 _numerator,
@@ -85,6 +85,25 @@ contract RCSTKToken is RedeemableToken, AdminRole {
     function startFirstIteration() public onlyAdmin {
         iterations[0].startBlock = block.number;
         iterations[0].active;
+    }
+
+    function switchIteration(uint8 _iterationFrom, uint8 _iterationTo)
+        public
+        onlyAdmin
+    {
+        require(
+            _iterationFrom == _iterationTo - 1,
+            "_iterationTo need to follow _iterationFrom"
+        );
+        require(
+            iterations[_iterationFrom].active == true,
+            "_iterationFrom is not the active iteration."
+        );
+
+        require(
+            iterations[_iterationFrom].softCapTimestamp > 0,
+            "softCap has not been reached yet on the active iteration."
+        );
     }
 
     function buyTokens(uint8 _iteration, uint256 _amountDAI)
@@ -183,7 +202,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
 
     function _redeemTokens(uint256 _amountTokens) internal whenNotPaused {
         //mint CSTK tokens
-        cstkToken.generateTokens(msg.sender, _amountTokens);
+        cstkTokenManager.mint(msg.sender, _amountTokens);
         _burn(msg.sender, _amountTokens);
     }
 }
