@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../registry/AdminRole.sol";
+import "../minime/MiniMeToken.sol";
 
 
 contract RCSTKToken is RedeemableToken, AdminRole {
@@ -14,6 +15,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         uint256 softCap,
         uint256 hardCap,
         address daiTokenAddress,
+        address payable cstkTokenAddress,
         address[] memory _admins
     )
         public
@@ -32,6 +34,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             0
         );
         daitoken = IERC20(daiTokenAddress);
+        cstkToken = MiniMeToken(cstkTokenAddress);
         newIteration(5, 2, 984000, 1250000);
         newIteration(2, 1, 796000, 1000000);
         newIteration(3, 2, 1170000, 1500000);
@@ -58,6 +61,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
     uint256 numIterations;
     mapping(uint256 => Iteration) iterations;
     IERC20 daitoken;
+    MiniMeToken cstkToken;
 
     function newIteration(
         uint256 _numerator,
@@ -116,7 +120,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         _mint(msg.sender, amountTokens);
     }
 
-    function redeemTokens(uint8 _iteration, uint256 _amountTokens)
+    function ditchTokens(uint8 _iteration, uint256 _amountTokens)
         public
         whenNotPaused
     {
@@ -132,6 +136,11 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             iterations[_iteration].softCapTimestamp == 0,
             "This iteration has reached its softCap already."
         );
+        require(
+            iterations[_iteration].spendable[msg.sender] >= _amountTokens,
+            "This iteration has reached its softCap already."
+        );
+
         uint256 _amountDAI = SafeMath.mul(
             _amountTokens,
             SafeMath.div(
@@ -139,16 +148,42 @@ contract RCSTKToken is RedeemableToken, AdminRole {
                 iterations[_iteration].numerator
             )
         );
-        _redeemTokens(_amountTokens, _amountDAI);
+        _ditchTokens(_amountTokens, _amountDAI);
         iterations[_iteration].totalReceived -= _amountDAI;
         iterations[_iteration].spendable[msg.sender] -= _amountTokens;
     }
 
-    function _redeemTokens(uint256 _amountTokens, uint256 _daiAmount)
+    function _ditchTokens(uint256 _amountTokens, uint256 _daiAmount)
         internal
         whenNotPaused
     {
         daitoken.transfer(msg.sender, _daiAmount);
+        _burn(msg.sender, _amountTokens);
+    }
+
+    function redeemTokens(uint8 _iteration, uint256 _amountTokens)
+        public
+        whenNotPaused
+    {
+        require(
+            _iteration < numIterations,
+            "This iteration does not exist yet."
+        );
+        require(
+            iterations[_iteration].active,
+            "This iteration is not active at this time."
+        );
+        require(
+            iterations[_iteration].spendable[msg.sender] >= _amountTokens,
+            "This iteration has reached its softCap already."
+        );
+        _redeemTokens(_amountTokens);
+        iterations[_iteration].spendable[msg.sender] -= _amountTokens;
+    }
+
+    function _redeemTokens(uint256 _amountTokens) internal whenNotPaused {
+        //mint CSTK tokens
+        cstkToken.generateTokens(msg.sender, _amountTokens);
         _burn(msg.sender, _amountTokens);
     }
 }

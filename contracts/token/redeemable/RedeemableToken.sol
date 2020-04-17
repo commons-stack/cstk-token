@@ -20,7 +20,8 @@ contract RedeemableToken is ERC20Detailed, ERC20Mintable, ERC20Pausable {
     bool transfersEnabled;
 
     function buyTokens(uint8 _iteration, uint256 _amountDAI) public;
-    function redeemTokens(uint256 _amountTokens, uint256 _daiAmount) internal;
+    function _redeemTokens(uint256 _amountTokens, uint256 _daiAmount) internal;
+    function _ditchTokens(uint256 _amountTokens, uint256 _daiAmount) internal;
     function switchIteration(uint8 _iterationFrom, uint8 _iterationTo) public;
     
 }
