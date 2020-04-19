@@ -83,8 +83,12 @@ contract RCSTKToken is RedeemableToken, AdminRole {
     }
 
     function startFirstIteration() public onlyAdmin {
+        require(
+            iterations[0].startBlock == 0,
+            "First iteration has already been started."
+        );
         iterations[0].startBlock = block.number;
-        iterations[0].active;
+        iterations[0].active = true;
     }
 
     function switchIteration(uint8 _iterationFrom, uint8 _iterationTo)
@@ -104,6 +108,11 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             iterations[_iterationFrom].softCapTimestamp > 0,
             "softCap has not been reached yet on the active iteration."
         );
+
+        iterations[_iterationFrom].active = false;
+        iterations[_iterationTo].active = true;
+        iterations[_iterationTo].startBlock = block.number;
+        //TODO : siphon all DAI of _iterationFrom to CS Multisig
     }
 
     function buyTokens(uint8 _iteration, uint256 _amountDAI)
@@ -131,12 +140,15 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         require(
             iterations[_iteration].totalReceived + amountTokens <=
                 iterations[_iteration].hardCap,
-            "This iteration has reached its hardCap already."
+            "This iteration has reached its hardCap already or would surpass it with this transaction."
         );
         daitoken.transferFrom(msg.sender, address(this), _amountDAI);
         iterations[_iteration].totalReceived += _amountDAI;
         iterations[_iteration].spendable[msg.sender] += amountTokens;
         _mint(msg.sender, amountTokens);
+        if(iterations[_iteration].totalReceived > iterations[_iteration].softCap) {
+            iterations[_iteration].softCapTimestamp = block.number;
+        }
     }
 
     function ditchTokens(uint8 _iteration, uint256 _amountTokens)
