@@ -12,7 +12,7 @@ contract Registry is RegistryAbstract {
         address[] memory wallets,
         uint256[] memory allowed
     ) public {
-        return _registerContributors(wallets, allowed);
+        _registerContributors(wallets, allowed);
     }
 
     function _registerContributors(
@@ -24,7 +24,7 @@ contract Registry is RegistryAbstract {
             "wallets and allowed values need to be the same length"
         );
         for (uint256 i = 0; i < wallets.length; ++i) {
-            require(wallets[i] != address(0), "address can not be address(0)");
+            require(wallets[i] != address(0), "address cannot be address(0)");
             ContributorInfo memory newContributor = ContributorInfo(
                 wallets[i],
                 allowed[i],
@@ -35,13 +35,13 @@ contract Registry is RegistryAbstract {
         }
     }
 
-    function removeContributors(address[] memory wallets) public onlyAdmin {
+    function removeContributors(address[] memory wallets) public {
         _removeContributors(wallets);
     }
 
-    function _removeContributors(address[] memory wallets) internal {
+    function _removeContributors(address[] memory wallets) internal onlyAdmin {
         for (uint256 i = 0; i < wallets.length; ++i) {
-            require(wallets[i] != address(0), "address can not be address(0)");
+            require(wallets[i] != address(0), "Cannot be zero address");
             delete contributors[wallets[i]].wallet;
             delete contributors[wallets[i]].allowed;
             delete contributors[wallets[i]].active;

@@ -1,4 +1,4 @@
-pragma solidity ^0.5;
+pragma solidity ^0.5.0;
 
 /*
   MiniMeToken contract taken from https://github.com/Giveth/minime/
