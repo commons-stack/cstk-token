@@ -10,31 +10,20 @@ import "./TokenManager.sol";
 
 contract RCSTKToken is RedeemableToken, AdminRole {
     constructor(
-        uint256 numerator,
-        uint256 denominator,
-        uint256 softCap,
-        uint256 hardCap,
         address daiTokenAddress,
+        address cstkTokenAddress,
         address payable cstkTokenManagerAddress,
+        address payable vaultAddress,
         address[] memory _admins
     )
         public
-        RedeemableToken("Redeemable CSTK Token", "RCSTK", false)
+        RedeemableToken("Redeemable CSTK Token", "rCSTK", false)
         AdminRole(_admins)
     {
-        uint256 iterationID = numIterations++;
-        iterations[iterationID] = Iteration(
-            false,
-            numerator,
-            denominator,
-            softCap,
-            hardCap,
-            block.number,
-            0,
-            0
-        );
-        daitoken = IERC20(daiTokenAddress);
+        daiToken = IERC20(daiTokenAddress);
+        cstkToken = IERC20(cstkTokenAddress);
         cstkTokenManager = TokenManager(cstkTokenManagerAddress);
+        vault = Vault(vaultAddress);
         newIteration(5, 2, 984000, 1250000);
         newIteration(2, 1, 796000, 1000000);
         newIteration(3, 2, 1170000, 1500000);
@@ -60,8 +49,19 @@ contract RCSTKToken is RedeemableToken, AdminRole {
 
     uint256 numIterations;
     mapping(uint256 => Iteration) iterations;
-    IERC20 daitoken;
+    IERC20 daiToken;
+    IERC20 cstkToken;
     TokenManager cstkTokenManager;
+    Vault vault;
+    uint256 FIVE_DAYS_IN_SECONDS = 432000;
+
+    modifier onlyContributor(address wallet) {
+        require(
+            registry.isContributor(wallet),
+            "Only contributors can call this."
+        );
+        _;
+    }
 
     function newIteration(
         uint256 _numerator,
@@ -83,6 +83,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
     }
 
     function startFirstIteration() public onlyAdmin {
+        //TODO check if iteration 0 exist.
         require(
             iterations[0].startBlock == 0,
             "First iteration has already been started."
@@ -118,10 +119,8 @@ contract RCSTKToken is RedeemableToken, AdminRole {
     function buyTokens(uint8 _iteration, uint256 _amountDAI)
         public
         whenNotPaused
+        onlyContributor(msg.sender)
     {
-        /*
- (startBlock && softcap_timestamp && softcap_timestamp < now()+5 days)
-        */
         require(
             _iteration < numIterations,
             "This iteration does not exist yet."
@@ -130,6 +129,43 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             iterations[_iteration].active,
             "This iteration is not active at this time."
         );
+
+        require(
+            iterations[_iteration].totalReceived ==
+                iterations[_iteration].hardCap,
+            "This iteration has reached its hardCap already."
+        );
+
+        require(
+            block.timestamp <
+                iterations[_iteration].softCapTimestamp + FIVE_DAYS_IN_SECONDS,
+            "Softcap timestamp has been reached more than 5 days ago."
+        );
+
+        if (
+            iterations[_iteration].totalReceived + _amountDAI >=
+            iterations[_iteration].hardCap
+        ) {
+            //switch iteration if passing hardcap
+            for (
+                uint256 amountDAIcurrentIteration = iterations[_iteration]
+                    .hardCap - iterations[_iteration].totalReceived;
+                iterations[_iteration].totalReceived + _amountDAI >=
+                iterations[_iteration].hardCap;
+                _amountDAI -= amountDAIcurrentIteration
+            ) {
+                _buyTokens(_iteration, amountDAIcurrentIteration);
+                switchIteration(_iteration, _iteration + 1);
+                _iteration++;
+            }
+        }
+        _buyTokens(_iteration, _amountDAI);
+    }
+
+    function _buyTokens(uint8 _iteration, uint256 _amountDAI)
+        internal
+        whenNotPaused
+    {
         uint256 amountTokens = SafeMath.mul(
             _amountDAI,
             SafeMath.div(
@@ -138,15 +174,20 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             )
         );
         require(
-            iterations[_iteration].totalReceived + amountTokens <=
-                iterations[_iteration].hardCap,
-            "This iteration has reached its hardCap already or would surpass it with this transaction."
+            balanceOf(msg.sender) +
+                cstkToken.balanceOf(msg.sender) +
+                amountTokens <=
+                registry.getAllowed(wallet),
+            "Buying that amount of tokens would get the contributor above their allowance."
         );
-        daitoken.transferFrom(msg.sender, address(this), _amountDAI);
+        daiToken.transferFrom(msg.sender, address(this), _amountDAI);
         iterations[_iteration].totalReceived += _amountDAI;
         iterations[_iteration].spendable[msg.sender] += amountTokens;
         _mint(msg.sender, amountTokens);
-        if(iterations[_iteration].totalReceived > iterations[_iteration].softCap) {
+        if (
+            iterations[_iteration].totalReceived >
+            iterations[_iteration].softCap
+        ) {
             iterations[_iteration].softCapTimestamp = block.number;
         }
     }
@@ -154,6 +195,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
     function ditchTokens(uint8 _iteration, uint256 _amountTokens)
         public
         whenNotPaused
+        onlyContributor(msg.sender)
     {
         require(
             _iteration < numIterations,
@@ -188,13 +230,14 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         internal
         whenNotPaused
     {
-        daitoken.transfer(msg.sender, _daiAmount);
+        daiToken.transfer(msg.sender, _daiAmount);
         _burn(msg.sender, _amountTokens);
     }
 
     function redeemTokens(uint8 _iteration, uint256 _amountTokens)
         public
         whenNotPaused
+        onlyContributor(msg.sender)
     {
         require(
             _iteration < numIterations,
