@@ -5,25 +5,30 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../registry/AdminRole.sol";
+import "../../registry/Registry.sol";
 import "./TokenManager.sol";
+import "./SecuredTokenTransfer.sol";
 
 
 contract RCSTKToken is RedeemableToken, AdminRole {
     constructor(
         address daiTokenAddress,
         address cstkTokenAddress,
+        address registryAddress,
         address payable cstkTokenManagerAddress,
-        address payable vaultAddress,
+        address payable safeAddress,
         address[] memory _admins
     )
         public
         RedeemableToken("Redeemable CSTK Token", "rCSTK", false)
         AdminRole(_admins)
     {
+        _daiTokenAddress = daiTokenAddress;
         daiToken = IERC20(daiTokenAddress);
         cstkToken = IERC20(cstkTokenAddress);
         cstkTokenManager = TokenManager(cstkTokenManagerAddress);
-        vault = Vault(vaultAddress);
+        registry = Registry(registryAddress);
+        safe = SecuredTokenTransfer(safeAddress);
         newIteration(5, 2, 984000, 1250000);
         newIteration(2, 1, 796000, 1000000);
         newIteration(3, 2, 1170000, 1500000);
@@ -49,10 +54,12 @@ contract RCSTKToken is RedeemableToken, AdminRole {
 
     uint256 numIterations;
     mapping(uint256 => Iteration) iterations;
+    address _daiTokenAddress;
     IERC20 daiToken;
     IERC20 cstkToken;
+    Registry registry;
     TokenManager cstkTokenManager;
-    Vault vault;
+    SecuredTokenTransfer safe;
     uint256 FIVE_DAYS_IN_SECONDS = 432000;
 
     modifier onlyContributor(address wallet) {
@@ -177,7 +184,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             balanceOf(msg.sender) +
                 cstkToken.balanceOf(msg.sender) +
                 amountTokens <=
-                registry.getAllowed(wallet),
+                registry.getAllowed(msg.sender),
             "Buying that amount of tokens would get the contributor above their allowance."
         );
         daiToken.transferFrom(msg.sender, address(this), _amountDAI);
@@ -230,8 +237,8 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         internal
         whenNotPaused
     {
-        daiToken.transfer(msg.sender, _daiAmount);
         _burn(msg.sender, _amountTokens);
+        safe.transferToken(_daiTokenAddress, msg.sender, _daiAmount);
     }
 
     function redeemTokens(uint8 _iteration, uint256 _amountTokens)
