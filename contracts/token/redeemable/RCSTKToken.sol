@@ -1,34 +1,46 @@
 pragma solidity ^0.5.0;
 
 import "./RedeemableToken.sol";
+import "./ERC20NonTransferrable.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../registry/AdminRole.sol";
 import "../../registry/Registry.sol";
 import "./TokenManager.sol";
-import "./SecuredTokenTransfer.sol";
+import "./Escapable.sol";
 
 
-contract RCSTKToken is RedeemableToken, AdminRole {
+contract RCSTKToken is
+    ERC20NonTransferrable,
+    RedeemableToken,
+    AdminRole,
+    Escapable
+{
     constructor(
         address daiTokenAddress,
         address cstkTokenAddress,
         address registryAddress,
         address payable cstkTokenManagerAddress,
-        address payable safeAddress,
-        address[] memory _admins
+        address[] memory _admins,
+        address _escapeHatchCaller,
+        address _escapeHatchDestination
     )
         public
         RedeemableToken("Redeemable CSTK Token", "rCSTK", false)
         AdminRole(_admins)
+        Escapable(_escapeHatchCaller, _escapeHatchDestination)
     {
-        _daiTokenAddress = daiTokenAddress;
-        daiToken = IERC20(daiTokenAddress);
         cstkToken = IERC20(cstkTokenAddress);
         cstkTokenManager = TokenManager(cstkTokenManagerAddress);
         registry = Registry(registryAddress);
-        safe = SecuredTokenTransfer(safeAddress);
+        bank = new TokenBank(
+            daiTokenAddress,
+            [],
+            _escapeHatchCaller,
+            _escapeHatchDestination
+        );
+
         newIteration(5, 2, 984000, 1250000);
         newIteration(2, 1, 796000, 1000000);
         newIteration(3, 2, 1170000, 1500000);
@@ -54,13 +66,13 @@ contract RCSTKToken is RedeemableToken, AdminRole {
 
     uint256 numIterations;
     mapping(uint256 => Iteration) iterations;
-    address _daiTokenAddress;
-    IERC20 daiToken;
     IERC20 cstkToken;
     Registry registry;
     TokenManager cstkTokenManager;
-    SecuredTokenTransfer safe;
     uint256 FIVE_DAYS_IN_SECONDS = 432000;
+    TokenBank internal bank;
+
+    event FinishRaise();
 
     modifier onlyContributor(address wallet) {
         require(
@@ -120,7 +132,14 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         iterations[_iterationFrom].active = false;
         iterations[_iterationTo].active = true;
         iterations[_iterationTo].startBlock = block.number;
-        //TODO : siphon all DAI of _iterationFrom to CS Multisig
+        bank.storeAllInVault();
+    }
+
+    function finishRaise() public onlyAdmin {
+        pause();
+        bank.storeAllInVault();
+        bank.evacuateToDestination();
+        emit FinishRaise();
     }
 
     function buyTokens(uint8 _iteration, uint256 _amountDAI)
@@ -159,7 +178,7 @@ contract RCSTKToken is RedeemableToken, AdminRole {
                     .hardCap - iterations[_iteration].totalReceived;
                 iterations[_iteration].totalReceived + _amountDAI >=
                 iterations[_iteration].hardCap;
-                _amountDAI -= amountDAIcurrentIteration
+                _amountDAI = SafeMath.sub(_amountDAI, amountDAIcurrentIteration)
             ) {
                 _buyTokens(_iteration, amountDAIcurrentIteration);
                 switchIteration(_iteration, _iteration + 1);
@@ -187,15 +206,23 @@ contract RCSTKToken is RedeemableToken, AdminRole {
                 registry.getAllowed(msg.sender),
             "Buying that amount of tokens would get the contributor above their allowance."
         );
-        daiToken.transferFrom(msg.sender, address(this), _amountDAI);
-        iterations[_iteration].totalReceived += _amountDAI;
-        iterations[_iteration].spendable[msg.sender] += amountTokens;
+        require(bank.submitDeposit(msg.sender, _amountDAI), "Deposit failed");
+
+        iterations[_iteration].totalReceived = SafeMath.add(
+            iterations[_iteration].totalReceived,
+            _amountDAI
+        );
+        iterations[_iteration].spendable[msg.sender] = SafeMath.add(
+            iterations[_iteration].spendable[msg.sender],
+            amountTokens
+        );
         _mint(msg.sender, amountTokens);
         if (
             iterations[_iteration].totalReceived >
             iterations[_iteration].softCap
         ) {
             iterations[_iteration].softCapTimestamp = block.number;
+            bank.storeAllInVault();
         }
     }
 
@@ -229,8 +256,15 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             )
         );
         _ditchTokens(_amountTokens, _amountDAI);
-        iterations[_iteration].totalReceived -= _amountDAI;
-        iterations[_iteration].spendable[msg.sender] -= _amountTokens;
+
+        iterations[_iteration].totalReceived = SafeMath.sub(
+            iterations[_iteration].totalReceived,
+            _amountDAI
+        );
+        iterations[_iteration].spendable[msg.sender] = SafeMath.sub(
+            iterations[_iteration].spendable[msg.sender],
+            _amountTokens
+        );
     }
 
     function _ditchTokens(uint256 _amountTokens, uint256 _daiAmount)
@@ -238,7 +272,10 @@ contract RCSTKToken is RedeemableToken, AdminRole {
         whenNotPaused
     {
         _burn(msg.sender, _amountTokens);
-        safe.transferToken(_daiTokenAddress, msg.sender, _daiAmount);
+        require(
+            bank.withdrawFromBalance(msg.sender, _daiAmount),
+            "Withdraw failed"
+        );
     }
 
     function redeemTokens(uint8 _iteration, uint256 _amountTokens)
@@ -259,7 +296,10 @@ contract RCSTKToken is RedeemableToken, AdminRole {
             "This iteration has reached its softCap already."
         );
         _redeemTokens(_amountTokens);
-        iterations[_iteration].spendable[msg.sender] -= _amountTokens;
+        iterations[_iteration].spendable[msg.sender] = SafeMath.sub(
+            iterations[_iteration].spendable[msg.sender],
+            _amountTokens
+        );
     }
 
     function _redeemTokens(uint256 _amountTokens) internal whenNotPaused {
