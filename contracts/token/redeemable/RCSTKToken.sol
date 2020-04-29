@@ -10,10 +10,11 @@ import "../../registry/Registry.sol";
 import "./TokenManager.sol";
 import "./Escapable.sol";
 
+
 /// @title A redeemable token for Common Stack fundraising.
 /// @author Nelson Melina
-/// @notice 
-/// @dev 
+/// @notice
+/// @dev
 contract RCSTKToken is
     ERC20NonTransferrable,
     RedeemableToken,
@@ -90,6 +91,7 @@ contract RCSTKToken is
 
     /// @notice
     uint256 FIVE_DAYS_IN_SECONDS = 432000;
+    TokenBank internal bank;
 
     event FinishRaise();
 
@@ -357,4 +359,3 @@ contract RCSTKToken is
         _burn(msg.sender, _amountTokens);
     }
 }
-
