@@ -24,7 +24,7 @@ contract RCSTKToken is
     /// @notice This will also deploy the Registry and TokenBank.
     /// @dev
     /// @param daiTokenAddress (address) DAI token address. 0x6b175474e89094c44da98b954eedeac495271d0f on Mainnet. https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f
-    /// @param cstkTokenAddress (address) CSTK Token address
+    /// @param cstkTokenAddress (address) CSTK Token address. 0xd53b50a6213ee7ff2fcc41a7cf69d22ded0a43b3 on Mainnet. https://etherscan.io/address/0xd53b50a6213ee7ff2fcc41a7cf69d22ded0a43b3
     /// @param cstkTokenManagerAddress (address)
     /// @param _admins (address[]) list of admin addresses for rCSTK, registry and TokenBank.
     /// @param _escapeHatchCaller (address) Escape Hatch caller.
