@@ -11,7 +11,7 @@ import "./TokenManager.sol";
 import "./Escapable.sol";
 
 
-/// @title A redeemable token for Common Stack fundraising.
+/// @title A redeemable token for Commons Stack fundraising.
 /// @author Nelson Melina
 /// @notice
 /// @dev
