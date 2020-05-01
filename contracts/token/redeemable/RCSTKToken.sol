@@ -10,20 +10,30 @@ import "../../registry/Registry.sol";
 import "./TokenManager.sol";
 import "./Escapable.sol";
 
-
+/// @title A redeemable token for Common Stack fundraising.
+/// @author Nelson Melina
+/// @notice 
+/// @dev 
 contract RCSTKToken is
     ERC20NonTransferrable,
     RedeemableToken,
     AdminRole,
     Escapable
 {
+    /// @notice This will also deploy the Registry and TokenBank.
+    /// @dev
+    /// @param daiTokenAddress (address) DAI token address. 0x6b175474e89094c44da98b954eedeac495271d0f on Mainnet. https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f
+    /// @param cstkTokenAddress (address) CSTK Token address
+    /// @param cstkTokenManagerAddress (address)
+    /// @param _admins (address[]) list of admin addresses for rCSTK, registry and TokenBank.
+    /// @param _escapeHatchCaller (address) Escape Hatch caller.
+    /// @param _escapeHatchDestination (address) Escape Hatch destination.
     constructor(
         address daiTokenAddress,
         address cstkTokenAddress,
-        address registryAddress,
-        address payable cstkTokenManagerAddress,
+        address cstkTokenManagerAddress,
         address[] memory _admins,
-        address _escapeHatchCaller,
+        address _escapeHatchCaller, /// @notice the RCSTK Token, Registry and TokenBank share the same escape hatch caller and destination.
         address _escapeHatchDestination
     )
         public
@@ -33,7 +43,7 @@ contract RCSTKToken is
     {
         cstkToken = IERC20(cstkTokenAddress);
         cstkTokenManager = TokenManager(cstkTokenManagerAddress);
-        registry = Registry(registryAddress);
+        registry = new Registry(_admins);
         bank = new TokenBank(
             daiTokenAddress,
             [],
@@ -54,26 +64,36 @@ contract RCSTKToken is
 
     struct Iteration {
         bool active;
-        uint256 numerator; //multiplication factor
-        uint256 denominator; // multiplication factor
-        uint256 softCap; //in DAI
-        uint256 hardCap; //in DAI
-        uint256 startBlock; //when did this iteration start
-        uint256 softCapTimestamp; //when the softcap was reached
-        uint256 totalReceived; //total DAI received in this iteration
-        mapping(address => uint256) spendable; //a mapping to keep track who has spent how much of his balance ( redeemed for DAI or converted to CSTK)
+        uint256 numerator; /// @dev multiplication factor
+        uint256 denominator; /// @dev multiplication factor
+        uint256 softCap; /// @dev in DAI
+        uint256 hardCap; /// @dev in DAI
+        uint256 startBlock; /// @dev when did this iteration start
+        uint256 softCapTimestamp; /// @dev when the softcap was reached
+        uint256 totalReceived; /// @dev total DAI received in this iteration
+        mapping(address => uint256) spendable; /// @dev a mapping to keep track who has spent how much of his balance ( redeemed for DAI or converted to CSTK)
     }
 
+    /// @notice
     uint256 numIterations;
+    /// @notice
     mapping(uint256 => Iteration) iterations;
+
+    /// @notice
     IERC20 cstkToken;
-    Registry registry;
-    TokenManager cstkTokenManager;
-    uint256 FIVE_DAYS_IN_SECONDS = 432000;
+
+    /// @notice
+    Registry internal registry;
+    /// @notice
+    TokenManager internal cstkTokenManager;
     TokenBank internal bank;
+
+    /// @notice
+    uint256 FIVE_DAYS_IN_SECONDS = 432000;
 
     event FinishRaise();
 
+    /// @dev only contributors whitelisted in the Registry will be allowed to use functions modified by this.
     modifier onlyContributor(address wallet) {
         require(
             registry.isContributor(wallet),
@@ -82,6 +102,13 @@ contract RCSTKToken is
         _;
     }
 
+    /// @notice Creates a new iteration phase.
+    /// @dev Only called by constructor. Iterations are hardcoded for rCSTK.
+    /// @param _numerator (uint256) multiplication factor
+    /// @param _denominator (uint256) multiplication factor
+    /// @param _softCap (uint256) in DAI
+    /// @param _hardCap (uint256) in DAI
+    /// @return iterationID (uint256) new iteration's ID
     function newIteration(
         uint256 _numerator,
         uint256 _denominator,
@@ -99,10 +126,16 @@ contract RCSTKToken is
             0,
             0
         );
+        return iterationID;
     }
 
+    /// @notice Start the first iteration of the fundraise.
     function startFirstIteration() public onlyAdmin {
-        //TODO check if iteration 0 exist.
+        /// @dev Should not happen. as iterations are created in the constructor.
+        require(
+            iterations.length >= 1,
+            "First iteration has not been created yet."
+        );
         require(
             iterations[0].startBlock == 0,
             "First iteration has already been started."
@@ -111,6 +144,10 @@ contract RCSTKToken is
         iterations[0].active = true;
     }
 
+    /// @notice Change iteration phase.
+    /// @dev _iterationFrom is probably useless.
+    /// @param _iterationFrom (uint8) current iteration
+    /// @param _iterationTo (uint8) iteration wewant to switch to
     function switchIteration(uint8 _iterationFrom, uint8 _iterationTo)
         public
         onlyAdmin
@@ -135,6 +172,8 @@ contract RCSTKToken is
         bank.storeAllInVault();
     }
 
+    /// @notice Finish the fundraise.
+    /// @dev Probably better to make it definitive instead of pausing.
     function finishRaise() public onlyAdmin {
         pause();
         bank.storeAllInVault();
@@ -142,6 +181,10 @@ contract RCSTKToken is
         emit FinishRaise();
     }
 
+    /// @notice Donate DAI and get rCSTK tokens in exchange.
+    /// @dev Maybe better to change function name to something else than buy.
+    /// @param _iteration (uint8) iteration at which contributor wants to donate.
+    /// @param _amountDAI (uint256) DAI amount the user wants to donate.
     function buyTokens(uint8 _iteration, uint256 _amountDAI)
         public
         whenNotPaused
@@ -172,7 +215,7 @@ contract RCSTKToken is
             iterations[_iteration].totalReceived + _amountDAI >=
             iterations[_iteration].hardCap
         ) {
-            //switch iteration if passing hardcap
+            ///switch iteration if passing hardcap
             for (
                 uint256 amountDAIcurrentIteration = iterations[_iteration]
                     .hardCap - iterations[_iteration].totalReceived;
@@ -226,6 +269,9 @@ contract RCSTKToken is
         }
     }
 
+    /// @notice burns rCSTK tokens, get some DAI back. Boooooh :-/
+    /// @param _iteration (uint8) Iteration ID
+    /// @param _amountTokens (uint256) amount of tokens to give back.
     function ditchTokens(uint8 _iteration, uint256 _amountTokens)
         public
         whenNotPaused
@@ -278,6 +324,9 @@ contract RCSTKToken is
         );
     }
 
+    /// @notice redeem rCSTK tokens for CSTK tokens. Irreversible.
+    /// @param _iteration (uint8) iteration ID
+    /// @param _amountTokens (uint256) rCSTK tokensamount to convert to CSTK.
     function redeemTokens(uint8 _iteration, uint256 _amountTokens)
         public
         whenNotPaused
@@ -303,8 +352,9 @@ contract RCSTKToken is
     }
 
     function _redeemTokens(uint256 _amountTokens) internal whenNotPaused {
-        //mint CSTK tokens
+        ///mint CSTK tokens
         cstkTokenManager.mint(msg.sender, _amountTokens);
         _burn(msg.sender, _amountTokens);
     }
 }
+
