@@ -1,12 +1,20 @@
-build
-.secret
+.env
+.env.local
 package-lock.json
 
-#Buidler files
+# Buidler files
 build
 cache
 artifacts
 node_modules
+
+# Coverage:
+.coverage*
+coverage/
+coverage.json
+
+# Typechain:
+typechain
 
 #### https://github.com/github/gitignore/blob/master/Node.gitignore
 # Logs

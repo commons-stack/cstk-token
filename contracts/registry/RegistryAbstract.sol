@@ -4,7 +4,7 @@ import "./AdminRole.sol";
 
 
 contract RegistryAbstract is AdminRole {
-    constructor(address[] memory _admins) AdminRole(_admins) internal {}
+    constructor(address[] memory _admins) internal AdminRole(_admins) {}
 
     event ContributorAdded(address wallet);
     event ContributorRemoved(address wallet);
@@ -15,7 +15,10 @@ contract RegistryAbstract is AdminRole {
         bool active;
     }
 
-    function registerContributors(address[] memory wallets, uint256[] memory allowed) public;
+    function registerContributors(
+        address[] memory wallets,
+        uint256[] memory allowed
+    ) public;
 
     function removeContributors(address[] memory wallets) public;
 
