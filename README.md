@@ -1,38 +1,17 @@
 # :seedling: Commons Stack Contribution Token :seedling:
 
-<<<<<<< HEAD
 This repo contains the smart contracts for the CSTK token contribution.
-=======
-## Running tests
-
-Run ganache in a seperate terminal
-
-```
-ganache-cli 
-```
-
-Then run the truffle suite
->>>>>>> 2f5d2b6... Update README.md
 
 ## Installation:
 
 Clone the repo to your local machine. Run `npm install`.
 
-<<<<<<< HEAD
 If you want to run gas reports, install ganache-cli globally.
-=======
-create .secret with a seed phrase
->>>>>>> 2f5d2b6... Update README.md
 
 Make sure to create the environment configuration and set env varables.
 You can modify the env template:
 
-<<<<<<< HEAD
 `cp .env.example .env`
-=======
-truffle test --network development
-
->>>>>>> 2f5d2b6... Update README.md
 
 **NOTE:** The **MNEMONIC** in the template should not be loaded with mainnet eth! Your funds **will** be stolen!
 
