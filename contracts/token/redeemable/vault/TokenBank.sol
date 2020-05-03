@@ -1,14 +1,14 @@
-pragma solidity 0.5.17;
+pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Escapable.sol";
+import "../../../registry/AdminRole.sol";
 
 
-contract TokenBank is ReentrancyGuard, Ownable, Escapable {
+contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /***************
@@ -55,7 +55,7 @@ contract TokenBank is ReentrancyGuard, Ownable, Escapable {
         address[] memory _admins,
         address _evacuationDestination,
         address _escapeHatchCaller,
-        address _escapeHatchDestination
+        address payable _escapeHatchDestination
     )
         public
         AdminRole(_admins)
@@ -131,19 +131,21 @@ contract TokenBank is ReentrancyGuard, Ownable, Escapable {
             "insufficient balance"
         );
         unsafeInternalTransfer(accountHolder, VAULT, amount);
-        emit TokensStored(accountHolder, amount);
+        emit TokensStoredInVault(accountHolder, amount);
         return true;
     }
 
     function storeAllInVault() public onlyAdmin nonReentrant returns (bool) {
-        EnumerableSet _accountHolders = EnumerableSet.enumerate(accountHolders);
-        for (var index = 0; index < _accountHolders.length; index++) {
+        address[] memory _accountHolders = EnumerableSet.enumerate(
+            accountHolders
+        );
+        for (uint256 index = 0; index < _accountHolders.length; index++) {
             unsafeInternalTransfer(
                 _accountHolders[index],
                 VAULT,
                 userTokenBalances[_accountHolders[index]]
             );
-            emit TokensStored(
+            emit TokensStoredInVault(
                 _accountHolders[index],
                 userTokenBalances[_accountHolders[index]]
             );
@@ -168,9 +170,11 @@ contract TokenBank is ReentrancyGuard, Ownable, Escapable {
     }
 
     function collectTokens(address) public nonReentrant returns (bool) {
-        uint256 amountToCollect = IERC20(depositToken)
-            .balanceOf(address(this))
-            .sub(userTokenBalances[TOTAL]);
+        uint256 balance = IERC20(depositToken).balanceOf(address(this));
+        uint256 amountToCollect = SafeMath.sub(
+            balance,
+            userTokenBalances[TOTAL]
+        );
         require(amountToCollect > 0, "no tokens to collect");
 
         unsafeAddToBalance(VAULT, amountToCollect);
@@ -209,9 +213,11 @@ contract TokenBank is ReentrancyGuard, Ownable, Escapable {
         );
     }
 
-    function unsafeInternalTransfer(address from, address to, uint256 amount)
-        internal
-    {
+    function unsafeInternalTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
         unsafeSubtractFromBalance(from, amount);
         unsafeAddToBalance(to, amount);
     }

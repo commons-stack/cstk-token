@@ -9,6 +9,7 @@ import "../../registry/AdminRole.sol";
 import "../../registry/Registry.sol";
 import "./TokenManager.sol";
 import "./Escapable.sol";
+import "./vault/TokenBank.sol";
 
 
 /// @title A redeemable token for Commons Stack fundraising.
@@ -35,7 +36,7 @@ contract RCSTKToken is
         address cstkTokenManagerAddress,
         address[] memory _admins,
         address _escapeHatchCaller, /// @notice the RCSTK Token, Registry and TokenBank share the same escape hatch caller and destination.
-        address _escapeHatchDestination
+        address payable _escapeHatchDestination
     )
         public
         RedeemableToken("Redeemable CSTK Token", "rCSTK", false)
@@ -47,7 +48,8 @@ contract RCSTKToken is
         registry = new Registry(_admins);
         bank = new TokenBank(
             daiTokenAddress,
-            [],
+            _admins,
+            _escapeHatchDestination,
             _escapeHatchCaller,
             _escapeHatchDestination
         );
@@ -72,7 +74,7 @@ contract RCSTKToken is
         uint256 startBlock; /// @dev when did this iteration start
         uint256 softCapTimestamp; /// @dev when the softcap was reached
         uint256 totalReceived; /// @dev total DAI received in this iteration
-        mapping(address => uint256) spendable; /// @dev a mapping to keep track who has spent how much of his balance ( redeemed for DAI or converted to CSTK)
+        mapping(address => uint256) spendable; /// @dev who has spent how much of his balance (redeemed for DAI or converted to CSTK)
     }
 
     /// @notice
@@ -87,7 +89,6 @@ contract RCSTKToken is
     Registry internal registry;
     /// @notice
     TokenManager internal cstkTokenManager;
-    TokenBank internal bank;
 
     /// @notice
     uint256 FIVE_DAYS_IN_SECONDS = 432000;
@@ -249,7 +250,7 @@ contract RCSTKToken is
                 cstkToken.balanceOf(msg.sender) +
                 amountTokens <=
                 registry.getAllowed(msg.sender),
-            "Buying that amount of tokens would get the contributor above their allowance."
+            "Buying that amount of tokens would go over the allowance."
         );
         require(bank.submitDeposit(msg.sender, _amountDAI), "Deposit failed");
 
