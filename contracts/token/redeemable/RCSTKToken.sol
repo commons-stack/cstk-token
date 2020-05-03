@@ -136,7 +136,7 @@ contract RCSTKToken is
     function startFirstIteration() public onlyAdmin {
         /// @dev Should not happen. as iterations are created in the constructor.
         require(
-            iterations.length >= 1,
+            _iterationExists(0),
             "First iteration has not been created yet."
         );
         require(
@@ -219,16 +219,19 @@ contract RCSTKToken is
             iterations[_iteration].hardCap
         ) {
             ///switch iteration if passing hardcap
+            uint8 iteration = _iteration;
+            uint256 amountDAI = _amountDAI;
+
             for (
-                uint256 amountDAIcurrentIteration = iterations[_iteration]
-                    .hardCap - iterations[_iteration].totalReceived;
-                iterations[_iteration].totalReceived + _amountDAI >=
-                iterations[_iteration].hardCap;
-                _amountDAI = SafeMath.sub(_amountDAI, amountDAIcurrentIteration)
+                uint256 amountDAIcurrentIteration = iterations[iteration]
+                    .hardCap - iterations[iteration].totalReceived;
+                iterations[iteration].totalReceived + _amountDAI >=
+                iterations[iteration].hardCap;
+                amountDAI = SafeMath.sub(amountDAI, amountDAIcurrentIteration)
             ) {
-                _buyTokens(_iteration, amountDAIcurrentIteration);
-                switchIteration(_iteration, _iteration + 1);
-                _iteration++;
+                _buyTokens(iteration, amountDAIcurrentIteration);
+                switchIteration(iteration, iteration + 1);
+                iteration++;
             }
         }
         _buyTokens(_iteration, _amountDAI);
@@ -358,5 +361,10 @@ contract RCSTKToken is
         ///mint CSTK tokens
         cstkTokenManager.mint(msg.sender, _amountTokens);
         _burn(msg.sender, _amountTokens);
+    }
+
+    function _iterationExists(uint256 _idx) internal view returns (bool) {
+        // TODO: check the criteria to match for an initialized iteration:
+        return iterations[_idx].softCap != 0;
     }
 }
