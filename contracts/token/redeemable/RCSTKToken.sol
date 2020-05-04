@@ -255,7 +255,7 @@ contract RCSTKToken is
                 registry.getAllowed(msg.sender),
             "Buying that amount of tokens would go over the allowance."
         );
-        require(bank.submitDeposit(msg.sender, _amountDAI), "Deposit failed");
+        bank.submitDeposit(msg.sender, _amountDAI);
 
         iterations[_iteration].totalReceived = SafeMath.add(
             iterations[_iteration].totalReceived,
@@ -324,10 +324,7 @@ contract RCSTKToken is
         whenNotPaused
     {
         _burn(msg.sender, _amountTokens);
-        require(
-            bank.withdrawFromBalance(msg.sender, _daiAmount),
-            "Withdraw failed"
-        );
+        bank.withdrawFromBalance(msg.sender, _daiAmount);
     }
 
     /// @notice redeem rCSTK tokens for CSTK tokens. Irreversible.

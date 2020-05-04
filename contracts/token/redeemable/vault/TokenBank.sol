@@ -102,7 +102,6 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         public
         onlyAdmin
         nonReentrant
-        returns (bool)
     {
         require(_address != address(0), "Depositor address cannot be zero");
         require(
@@ -124,16 +123,12 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         }
 
         emit SubmitDeposit(_address, _amount);
-
-        // TODO: do we need a return value here?
-        return true;
     }
 
     function withdrawFromBalance(address _address, uint256 _amount)
         public
         onlyAdmin
         nonReentrant
-        returns (bool)
     {
         require(
             tokenBalances[_address] >= _amount,
@@ -150,16 +145,12 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         );
 
         emit Withdraw(_address, _amount);
-
-        // TODO: do we need a return value here?
-        return true;
     }
 
     function storeInVault(address _address, uint256 _amount)
         public
         onlyAdmin
         nonReentrant
-        returns (bool)
     {
         require(
             tokenBalances[_address] >= _amount,
@@ -170,10 +161,9 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         unsafeInternalTransfer(_address, VAULT, _amount);
 
         emit TokensStoredInVault(_address, _amount);
-        return true;
     }
 
-    function storeAllInVault() public onlyAdmin nonReentrant returns (bool) {
+    function storeAllInVault() public onlyAdmin nonReentrant {
         // Get an enumerated array of all accounts:
         address[] memory accs = EnumerableSet.enumerate(accounts);
 
@@ -187,16 +177,12 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
 
             emit TokensStoredInVault(acc, bal);
         }
-
-        // TODO: do we need a return value here?
-        return true;
     }
 
     function evacuateToDestination()
         public
         onlyAdmin
         nonReentrant
-        returns (bool)
     {
         uint256 vaultBalance = tokenBalances[VAULT];
 
@@ -210,12 +196,9 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         );
 
         emit Evacuate(evacuationDestination, vaultBalance);
-
-        // TODO: do we need to return true?
-        return true;
     }
 
-    function collectTokens() public nonReentrant returns (bool) {
+    function collectTokens() public nonReentrant {
         // Fist, get the total token balance of the TokenVault contract:
         uint256 balance = IERC20(token).balanceOf(address(this));
 
@@ -229,9 +212,6 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         unsafeAddToBalance(VAULT, toCollect);
 
         emit TokensCollected(toCollect);
-
-        // TODO: do we need to return true?
-        return true;
     }
 
     //
