@@ -3,9 +3,17 @@ pragma solidity ^0.5.0;
 import "./RegistryAbstract.sol";
 
 
+/// @title Registry to whitelist contributors
+/// @author Nelson Melina
+/// @notice
+/// @dev
 contract Registry is RegistryAbstract {
+    /// @notice
     mapping(address => ContributorInfo) contributors;
 
+    /// @notice
+    /// @dev
+    /// @param _admins ()
     constructor(address[] memory _admins) public RegistryAbstract(_admins) {}
 
     function registerContributors(
@@ -15,6 +23,10 @@ contract Registry is RegistryAbstract {
         _registerContributors(wallets, allowed);
     }
 
+    /// @notice
+    /// @dev
+    /// @param wallets ()
+    /// @param allowed ()
     function _registerContributors(
         address[] memory wallets,
         uint256[] memory allowed
@@ -35,6 +47,9 @@ contract Registry is RegistryAbstract {
         }
     }
 
+    /// @notice
+    /// @dev
+    /// @param wallets ()
     function removeContributors(address[] memory wallets) public {
         _removeContributors(wallets);
     }
@@ -50,6 +65,10 @@ contract Registry is RegistryAbstract {
         }
     }
 
+    /// @notice
+    /// @dev
+    /// @param wallet (address)
+    /// @return allowed (uint256)
     function getAllowed(address wallet) public view returns (uint256 allowed) {
         return contributors[wallet].allowed;
     }
@@ -58,3 +77,4 @@ contract Registry is RegistryAbstract {
         return contributors[wallet].active;
     }
 }
+
