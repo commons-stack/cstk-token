@@ -1,6 +1,6 @@
 import { ethers } from "@nomiclabs/buidler";
 import { expect, use } from "chai";
-import { solidity } from "ethereum-waffle";
+import { loadFixture, solidity } from "ethereum-waffle";
 import { Signer } from "ethers";
 
 import { AdminRoleMock } from "../../typechain/AdminRoleMock";
@@ -27,18 +27,15 @@ describe("Testing AdminRole contract", function () {
   beforeEach(async function () {
     signers = await ethers.getSigners();
 
-    // Owner:
     ownerSigner = signers[0];
     owner = await ownerSigner.getAddress();
 
-    // Admins:
     defaultAdmins = [
       await signers[1].getAddress(),
       await signers[2].getAddress(),
       await signers[3].getAddress(),
     ];
 
-    // Other:
     otherSigner = signers[4];
     other = await otherSigner.getAddress();
   });

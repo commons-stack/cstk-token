@@ -279,9 +279,11 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         tokenBalances[TOTAL] = SafeMath.sub(tokenBalances[TOTAL], amount);
     }
 
-    function _internalTransfer(address from, address to, uint256 amount)
-        internal
-    {
+    function _internalTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
         _subFromBalance(from, amount);
         _addToBalance(to, amount);
     }
