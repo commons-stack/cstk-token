@@ -77,21 +77,25 @@ contract RCSTKToken is
         mapping(address => uint256) spendable; /// @dev who has spent how much of his balance (redeemed for DAI or converted to CSTK)
     }
 
-    /// @notice
+    /// @notice Number of existing iterations.
     uint256 numIterations;
-    /// @notice
+
+    /// @notice List of iterations. iterations[index]
     mapping(uint256 => Iteration) iterations;
 
-    /// @notice
+    /// @notice Commons Stack ERC20 token smart contract.
     IERC20 cstkToken;
 
-    /// @notice
+    /// @notice Whitelisting Registry smart contract.
     Registry internal registry;
-    /// @notice
+
+    /// @notice Commons Stack Token manager smart contract.
     TokenManager internal cstkTokenManager;
 
-    /// @notice
+    /// @notice Constant for 5 days in seconds.
     uint256 FIVE_DAYS_IN_SECONDS = 432000;
+
+    /// @notice Token Bank smart smart contract.
     TokenBank internal bank;
 
     event FinishRaise();
