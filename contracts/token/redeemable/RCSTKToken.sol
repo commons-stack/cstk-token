@@ -184,7 +184,7 @@ contract RCSTKToken is
     function finishRaise() public onlyAdmin {
         pause();
         bank.storeAllInVault();
-        bank.evacuateToDestination();
+        bank.drainVault();
         emit FinishRaise();
     }
 
@@ -259,7 +259,7 @@ contract RCSTKToken is
                 registry.getAllowed(msg.sender),
             "Buying that amount of tokens would go over the allowance."
         );
-        bank.submitDeposit(msg.sender, _amountDAI);
+        bank.deposit(msg.sender, _amountDAI);
 
         iterations[_iteration].totalReceived = SafeMath.add(
             iterations[_iteration].totalReceived,
@@ -328,7 +328,7 @@ contract RCSTKToken is
         whenNotPaused
     {
         _burn(msg.sender, _amountTokens);
-        bank.withdrawFromBalance(msg.sender, _daiAmount);
+        bank.withdraw(msg.sender, _daiAmount);
     }
 
     /// @notice redeem rCSTK tokens for CSTK tokens. Irreversible.

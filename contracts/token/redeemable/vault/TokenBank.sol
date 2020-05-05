@@ -16,48 +16,45 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
     // CONSTANTS:
     //
 
-    // TODO: Better to use a dedicated vault counter?
-    address public constant VAULT = address(0xdead);
-
-    // TODO: Better to use a dedicated total counter?
-    address public constant TOTAL = address(0xbabe);
+    address internal constant VAULT = address(0xdead);
+    address internal constant TOTAL = address(0xbabe);
 
     //
     // STORAGE:
     //
 
     // Address of the ERC20 token contract that stores tokens in the TokenBank:
-    address public token;
+    address internal token;
 
     // EnumerableSet of all accounts that have a balance in the TokenBank:
     EnumerableSet.AddressSet internal accounts;
 
     // Mapping of account => token balance in the TokenBank:
-    mapping(address => uint256) public tokenBalances;
+    mapping(address => uint256) internal tokenBalances;
 
-    // Address to evacuate tokens to on evacuate calls, set on construction:
-    address public evacuationDestination;
+    // Address to receive vault drain, set on construction:
+    address internal drainVaultReceiver;
 
     //
     // EVENTS:
     //
 
     /// @dev Emit when a deposit is submitted to the TokenBank:
-    event SubmitDeposit(address indexed depositor, uint256 depositAmount);
+    event Deposit(address indexed depositor, uint256 depositAmount);
 
     /// @dev Emit when the TokenBank moves an amount of tokens to the Vault:
-    event TokensStoredInVault(address indexed account, uint256 amount);
+    event StoredInVault(address indexed account, uint256 amount);
 
     /// @dev Emit when an amount of tokens has been collected:
-    event TokensCollected(uint256 amountToCollect);
+    event StoreUnclaimedInVault(uint256 amountToCollect);
 
     /// @dev Emit when an amount of tokens has been withdrawn to an account:
     event Withdraw(address indexed account, uint256 amount);
 
-    /// @dev Emit when an amount of tokens has been evacuated to a destination:
-    event Evacuate(address indexed destination, uint256 amount);
+    /// @dev Emit when an amount of tokens has been drained from the Vault:
+    event DrainVault(address indexed destination, uint256 amount);
 
-    /// @dev Only allow addresses from the account holders set
+    /// @dev Only allow addresses from the account holders set:
     modifier onlyAccountHolders(address addr) {
         require(
             EnumerableSet.contains(accounts, addr),
@@ -70,16 +67,16 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
     // CONSTRUCTOR:
     //
 
-    /// @dev Construct a TokenBank.
+    /// @notice Construct a TokenBank.
     /// @param _token The ERC20 token that the TokenBank can receive
     /// @param _admins A list of addresses that will be given the Admin role
-    /// @param _evacuationDestination The address to receive evacuated tokens
+    /// @param _drainVaultReceiver The address to receive Vault drains
     /// @param _escapeHatchCaller The address allowed to call the EscapeHatch
     /// @param _escapeHatchDestination The address to receive all tokens from calling the EscapeHatch
     constructor(
         address _token,
         address[] memory _admins,
-        address _evacuationDestination,
+        address _drainVaultReceiver,
         address _escapeHatchCaller,
         address payable _escapeHatchDestination
     )
@@ -88,25 +85,34 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         Escapable(_escapeHatchCaller, _escapeHatchDestination)
     {
         // TODO: Verify that token has ERC20 interface?
-        require(token != address(0), "Deposit token address cannot be zero");
+        require(_token != address(0), "Deposit token cannot be zero adress");
+        require(
+            _drainVaultReceiver != address(0),
+            "Vault cannot be drained to zero address"
+        );
 
         token = _token;
-        evacuationDestination = _evacuationDestination;
+        drainVaultReceiver = _drainVaultReceiver;
     }
 
     //
-    // PUBLIC FUNCTIONS:
+    // EXTERNAL FUNCTIONS:
     //
 
-    function submitDeposit(address _address, uint256 _amount)
-        public
+    function deposit(address _address, uint256 _amount) external {
+        _deposit(_address, _amount);
+    }
+
+    /// @dev deposit() implementation
+    function _deposit(address _address, uint256 _amount)
+        internal
         onlyAdmin
         nonReentrant
     {
-        require(_address != address(0), "Depositor address cannot be zero");
+        require(_address != address(0), "Cannot deposit from zero address");
         require(
             _address != VAULT && _address != TOTAL,
-            "Depositor address cannot be a reserved value"
+            "Cannot deposit from reserved address"
         );
 
         // Take a deposit of tokens from the depositor and transfer it to TokenBank:
@@ -115,18 +121,23 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
             "Token transfer failed"
         );
         // Add deposited amount to the depositor token balance:
-        unsafeAddToBalance(_address, _amount);
+        _addToBalance(_address, _amount);
 
         // Ensure depositor is in the account set:
         if (!EnumerableSet.contains(accounts, _address)) {
             EnumerableSet.add(accounts, _address);
         }
 
-        emit SubmitDeposit(_address, _amount);
+        emit Deposit(_address, _amount);
     }
 
-    function withdrawFromBalance(address _address, uint256 _amount)
-        public
+    function withdraw(address _address, uint256 _amount) external {
+        _withdraw(_address, _amount);
+    }
+
+    /// @dev withdraw implementation
+    function _withdraw(address _address, uint256 _amount)
+        internal
         onlyAdmin
         nonReentrant
     {
@@ -136,7 +147,7 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         );
 
         // Remove the amount of tokens the account token balance:
-        unsafeSubtractFromBalance(_address, _amount);
+        _subFromBalance(_address, _amount);
 
         // Transfer the token amount fro TokenBank to address:
         require(
@@ -147,8 +158,12 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         emit Withdraw(_address, _amount);
     }
 
-    function storeInVault(address _address, uint256 _amount)
-        public
+    function storeInVault(address _address, uint256 _amount) external {
+        _storeInVault(_address, _amount);
+    }
+
+    function _storeInVault(address _address, uint256 _amount)
+        internal
         onlyAdmin
         nonReentrant
     {
@@ -158,109 +173,144 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         );
 
         // Move the tokens from the token account to the Vault:
-        unsafeInternalTransfer(_address, VAULT, _amount);
+        _internalTransfer(_address, VAULT, _amount);
 
-        emit TokensStoredInVault(_address, _amount);
+        emit StoredInVault(_address, _amount);
     }
 
-    function storeAllInVault() public onlyAdmin nonReentrant {
-        // Get an enumerated array of all accounts:
-        address[] memory accs = EnumerableSet.enumerate(accounts);
+    function storeAllInVault() external {
+        _storeAllInVault();
+    }
 
-        // For each account:
+    function _storeAllInVault() internal onlyAdmin nonReentrant {
+        address[] memory accs = _getAccounts();
         for (uint256 i = 0; i < accs.length; ++i) {
             address acc = accs[i];
             uint256 bal = tokenBalances[acc];
 
-            // Move the tokens from the token account to the Vault:
-            unsafeInternalTransfer(acc, VAULT, bal);
-
-            emit TokensStoredInVault(acc, bal);
+            _internalTransfer(acc, VAULT, bal);
+            emit StoredInVault(acc, bal);
         }
     }
 
-    function evacuateToDestination()
-        public
-        onlyAdmin
-        nonReentrant
-    {
+    function storeUnclaimedInVault() external {
+        return _storeUnclaimedInVault();
+    }
+
+    function _storeUnclaimedInVault() internal nonReentrant {
+        uint256 amount = _unclaimedTokenBalance();
+        require(amount > 0, "No unclaimed token balance to store in Vault");
+
+        // Add all unclaimed tokens to the Vault:
+        _addToBalance(VAULT, amount);
+
+        emit StoreUnclaimedInVault(amount);
+    }
+
+    function drainVault() external {
+        _drainVault();
+    }
+
+    function _drainVault() internal onlyAdmin nonReentrant {
         uint256 vaultBalance = tokenBalances[VAULT];
 
         // Remove all the tokens from Vault:
-        unsafeSubtractFromBalance(VAULT, vaultBalance);
+        _subFromBalance(VAULT, vaultBalance);
 
         // Transfer all the tokens from the TokenBank to the evac address:
         require(
-            IERC20(token).transfer(evacuationDestination, vaultBalance),
+            IERC20(token).transfer(drainVaultReceiver, vaultBalance),
             "Transfer failed"
         );
 
-        emit Evacuate(evacuationDestination, vaultBalance);
-    }
-
-    function collectTokens() public nonReentrant {
-        // Fist, get the total token balance of the TokenVault contract:
-        uint256 balance = IERC20(token).balanceOf(address(this));
-
-        // Amount of tokens to collect is the remainder of unallocated tokens:
-        // TODO: extract getTokensToCollect to view function?
-        uint256 toCollect = SafeMath.sub(balance, tokenBalances[TOTAL]);
-
-        require(toCollect > 0, "No token balance to collect");
-
-        // Add all unallocated tokens to the Vault:
-        unsafeAddToBalance(VAULT, toCollect);
-
-        emit TokensCollected(toCollect);
+        emit DrainVault(drainVaultReceiver, vaultBalance);
     }
 
     //
     // VIEW FUNCTIONS:
     //
 
-    // TODO: Extract getTokensToCollect into view function?
-    // TODO: Add account functions: isAccount, getAccounts?
+    function getDepositToken() external view returns (address) {
+        return token;
+    }
 
-    function getUserTokenBalance(address _address)
-        public
-        view
-        returns (uint256)
-    {
+    function getTokenBalance(address _address) external view returns (uint256) {
         return tokenBalances[_address];
+    }
+
+    function isAccount(address _address) external view returns (bool) {
+        return accounts.contains(_address);
+    }
+
+    function numAccounts() external view returns (uint256) {
+        return accounts.length();
+    }
+
+    function getAccounts() external view returns (address[] memory) {
+        return _getAccounts();
+    }
+
+    /// @dev getAccounts() implementation
+    function _getAccounts() internal view returns (address[] memory) {
+        return EnumerableSet.enumerate(accounts);
+    }
+
+    function getAccountsAndTokenBalances()
+        external
+        view
+        returns (address[] memory, uint256[] memory)
+    {
+        uint256 len = accounts.length();
+        address[] memory accs = _getAccounts();
+        uint256[] memory balances = new uint256[](len);
+
+        for (uint256 i = 0; i < len; ++i) {
+            balances[i] = tokenBalances[accs[i]];
+        }
+
+        return (accs, balances);
+    }
+
+    /// @dev Return the token balance not claimed by Vault or any account in the TokenBank
+    function unclaimedTokenBalance() external view returns (uint256) {
+        return _unclaimedTokenBalance();
+    }
+
+    /// @dev unclaimedTokenBalance() implementation
+    function _unclaimedTokenBalance() internal view returns (uint256) {
+        return
+            SafeMath.sub(
+                IERC20(token).balanceOf(address(this)),
+                tokenBalances[TOTAL]
+            );
     }
 
     //
     // INTERNAL FUNCTIONS:
     //
 
-    // TODO: Aren't these SAFE adds and transfers?
-
-    function unsafeAddToBalance(address _account, uint256 _amount) internal {
+    function _addToBalance(address _account, uint256 _amount) internal {
         tokenBalances[_account] = SafeMath.add(
             tokenBalances[_account],
             _amount
         );
-        // TODO: Use dedicated total counter instead?
         tokenBalances[TOTAL] = SafeMath.add(tokenBalances[TOTAL], _amount);
     }
 
-    function unsafeSubtractFromBalance(address _account, uint256 _amount)
-        internal
-    {
+    function _subFromBalance(address _account, uint256 _amount) internal {
         tokenBalances[_account] = SafeMath.sub(
             tokenBalances[_account],
             _amount
         );
-        // TODO: Use dedicated total counter instead?
         tokenBalances[TOTAL] = SafeMath.sub(tokenBalances[TOTAL], _amount);
     }
 
-    function unsafeInternalTransfer(
+    function _internalTransfer(
         address from,
         address to,
         uint256 amount
     ) internal {
-        unsafeSubtractFromBalance(from, amount);
-        unsafeAddToBalance(to, amount);
+        _subFromBalance(from, amount);
+        _addToBalance(to, amount);
     }
 }
