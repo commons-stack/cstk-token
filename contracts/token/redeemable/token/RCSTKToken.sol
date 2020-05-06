@@ -34,6 +34,7 @@ contract RCSTKToken is
         address daiTokenAddress,
         address cstkTokenAddress,
         address cstkTokenManagerAddress,
+        address registryAddress,
         address[] memory _admins,
         address _escapeHatchCaller, /// @notice the RCSTK Token, Registry and TokenBank share the same escape hatch caller and destination.
         address payable _escapeHatchDestination
@@ -45,7 +46,7 @@ contract RCSTKToken is
     {
         cstkToken = IERC20(cstkTokenAddress);
         cstkTokenManager = TokenManager(cstkTokenManagerAddress);
-        registry = new Registry(_admins);
+        registry = Registry(registryAddress);
         bank = new TokenBank(
             daiTokenAddress,
             _admins,
