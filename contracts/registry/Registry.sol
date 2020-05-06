@@ -5,32 +5,21 @@ import "./RegistryAbstract.sol";
 
 /// @title Registry to whitelist contributors
 /// @author Nelson Melina
-/// @notice
-/// @dev
 contract Registry is RegistryAbstract {
-    /// @notice
+    /// @notice Map of contributors, contributors[address]
     mapping(address => ContributorInfo) contributors;
 
-    /// @notice
-    /// @dev
-    /// @param _admins ()
+    /// @param _admins (address[]) List of admins for the Registry contract.
     constructor(address[] memory _admins) public RegistryAbstract(_admins) {}
 
+    /// @notice Register a list of contributors and the amount of CSTK token they are allowed to own.
+    /// @dev wallets and allowed need to be in the same order
+    /// @param wallets (address[]) List of contributors' addresses to be registered
+    /// @param allowed (uint256[]) List of allowed amounts for each contributors.
     function registerContributors(
         address[] memory wallets,
         uint256[] memory allowed
-    ) public {
-        _registerContributors(wallets, allowed);
-    }
-
-    /// @notice
-    /// @dev
-    /// @param wallets ()
-    /// @param allowed ()
-    function _registerContributors(
-        address[] memory wallets,
-        uint256[] memory allowed
-    ) internal {
+    ) public onlyAdmin {
         require(
             wallets.length == allowed.length,
             "wallets and allowed values need to be the same length"
@@ -47,14 +36,9 @@ contract Registry is RegistryAbstract {
         }
     }
 
-    /// @notice
-    /// @dev
-    /// @param wallets ()
-    function removeContributors(address[] memory wallets) public {
-        _removeContributors(wallets);
-    }
-
-    function _removeContributors(address[] memory wallets) internal onlyAdmin {
+    /// @notice Remove contributors from the registry.
+    /// @param wallets (address[]) List of contributors to be removed.
+    function removeContributors(address[] memory wallets) public onlyAdmin {
         for (uint256 i = 0; i < wallets.length; ++i) {
             require(wallets[i] != address(0), "Cannot be zero address");
             delete contributors[wallets[i]].wallet;
@@ -65,16 +49,15 @@ contract Registry is RegistryAbstract {
         }
     }
 
-    /// @notice
-    /// @dev
     /// @param wallet (address)
-    /// @return allowed (uint256)
+    /// @return allowed (uint256) returns the amount of CSTK token that `wallet` is allowed to own.
     function getAllowed(address wallet) public view returns (uint256 allowed) {
         return contributors[wallet].allowed;
     }
 
+    /// @param wallet (address)
+    /// @return TRUE if `wallet` is a contributor.
     function isContributor(address wallet) public view returns (bool) {
         return contributors[wallet].active;
     }
 }
-
