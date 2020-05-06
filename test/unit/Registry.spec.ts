@@ -12,7 +12,7 @@ use(solidity);
 
 describe("Test whitelist registry", function () {
   let signers: Signer[];
-  let ownerSinger: Signer;
+  let ownerSigner: Signer;
   let owner: string;
   let defaultAdmins: string[];
   let defaultContributors: string[];
@@ -23,7 +23,7 @@ describe("Test whitelist registry", function () {
 
   async function deploy(
     admins: string[] = defaultAdmins,
-    deployer: Signer = ownerSinger,
+    deployer: Signer = ownerSigner,
   ): Promise<Registry> {
     const factory = new RegistryFactory(deployer);
     return factory.deploy(admins);
@@ -33,8 +33,8 @@ describe("Test whitelist registry", function () {
     signers = await ethers.getSigners();
 
     // Owner:
-    ownerSinger = signers[0];
-    owner = await ownerSinger.getAddress();
+    ownerSigner = signers[0];
+    owner = await ownerSigner.getAddress();
 
     // Set the admins:
     defaultAdmins = [

@@ -5,11 +5,11 @@ import "./ERC20NonTransferrable.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../registry/AdminRole.sol";
-import "../../registry/Registry.sol";
+import "../../../registry/AdminRole.sol";
+import "../../../registry/Registry.sol";
 import "./TokenManager.sol";
-import "./Escapable.sol";
-import "./vault/TokenBank.sol";
+import "../Escapable.sol";
+import "../vault/TokenBank.sol";
 
 
 /// @title A redeemable token for Commons Stack fundraising.
