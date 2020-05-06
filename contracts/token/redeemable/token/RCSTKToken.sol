@@ -1,10 +1,13 @@
 pragma solidity ^0.5.0;
 
-import "./RedeemableToken.sol";
 import "./ERC20NonTransferrable.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "../../../registry/AdminRole.sol";
 import "../../../registry/Registry.sol";
 import "./TokenManager.sol";
@@ -18,7 +21,9 @@ import "../vault/TokenBank.sol";
 /// @dev
 contract RCSTKToken is
     ERC20NonTransferrable,
-    RedeemableToken,
+    ERC20Detailed,
+    ERC20Mintable,
+    ERC20Pausable,
     AdminRole,
     Escapable
 {
@@ -40,7 +45,7 @@ contract RCSTKToken is
         address payable _escapeHatchDestination
     )
         public
-        RedeemableToken("Redeemable CSTK Token", "rCSTK", false)
+        ERC20Detailed("Redeemable CSTK Token", "rCSTK", 18)
         AdminRole(_admins)
         Escapable(_escapeHatchCaller, _escapeHatchDestination)
     {
@@ -79,13 +84,13 @@ contract RCSTKToken is
     }
 
     /// @notice Number of existing iterations.
-    uint256 numIterations;
+    uint256 internal numIterations;
 
     /// @notice List of iterations. iterations[index]
-    mapping(uint256 => Iteration) iterations;
+    mapping(uint256 => Iteration) internal iterations;
 
     /// @notice Commons Stack ERC20 token smart contract.
-    IERC20 cstkToken;
+    IERC20 internal cstkToken;
 
     /// @notice Whitelisting Registry smart contract.
     Registry internal registry;
@@ -94,7 +99,7 @@ contract RCSTKToken is
     TokenManager internal cstkTokenManager;
 
     /// @notice Constant for 5 days in seconds.
-    uint256 FIVE_DAYS_IN_SECONDS = 432000;
+    uint256 private constant FIVE_DAYS_IN_SECONDS = 432000;
 
     /// @notice Token Bank smart smart contract.
     TokenBank internal bank;
