@@ -99,90 +99,76 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
     // EXTERNAL FUNCTIONS:
     //
 
-    function deposit(address _address, uint256 _amount) external {
-        _deposit(_address, _amount);
-    }
-
-    /// @dev deposit() implementation
-    function _deposit(address _address, uint256 _amount)
-        internal
+    /// @notice Deposit `amount` tokens on `wallet` account.
+    function deposit(address wallet, uint256 amount)
+        external
         onlyAdmin
         nonReentrant
     {
-        require(_address != address(0), "Cannot deposit from zero address");
+        require(wallet != address(0), "Cannot deposit from zero address");
         require(
-            _address != VAULT && _address != TOTAL,
+            wallet != VAULT && wallet != TOTAL,
             "Cannot deposit from reserved address"
         );
 
         // Take a deposit of tokens from the depositor and transfer it to TokenBank:
         require(
-            IERC20(token).transferFrom(_address, address(this), _amount),
+            IERC20(token).transferFrom(wallet, address(this), amount),
             "Token transfer failed"
         );
         // Add deposited amount to the depositor token balance:
-        _addToBalance(_address, _amount);
+        _addToBalance(wallet, amount);
 
         // Ensure depositor is in the account set:
-        if (!EnumerableSet.contains(accounts, _address)) {
-            EnumerableSet.add(accounts, _address);
+        if (!EnumerableSet.contains(accounts, wallet)) {
+            EnumerableSet.add(accounts, wallet);
         }
 
-        emit Deposit(_address, _amount);
+        emit Deposit(wallet, amount);
     }
 
-    function withdraw(address _address, uint256 _amount) external {
-        _withdraw(_address, _amount);
-    }
-
-    /// @dev withdraw implementation
-    function _withdraw(address _address, uint256 _amount)
-        internal
+    /// @notice Withdraw `amount` from `wallet` account and send it back to it's address.
+    function withdraw(address wallet, uint256 amount)
+        external
         onlyAdmin
         nonReentrant
     {
         require(
-            tokenBalances[_address] >= _amount,
+            tokenBalances[wallet] >= amount,
             "Address has insufficieant token balance to withdraw"
         );
 
         // Remove the amount of tokens the account token balance:
-        _subFromBalance(_address, _amount);
+        _subFromBalance(wallet, amount);
 
         // Transfer the token amount fro TokenBank to address:
         require(
-            IERC20(token).transfer(_address, _amount),
+            IERC20(token).transfer(wallet, amount),
             "Token transfer failed"
         );
 
-        emit Withdraw(_address, _amount);
+        emit Withdraw(wallet, amount);
     }
 
-    function storeInVault(address _address, uint256 _amount) external {
-        _storeInVault(_address, _amount);
-    }
-
-    function _storeInVault(address _address, uint256 _amount)
-        internal
+    /// @notice Move `amount` tokens from `wallet` account to the VAULT account.
+    function storeInVault(address wallet, uint256 amount)
+        external
         onlyAdmin
         nonReentrant
     {
         require(
-            tokenBalances[_address] >= _amount,
+            tokenBalances[wallet] >= amount,
             "Address has insufficient token balance balance to send to Vault"
         );
 
         // Move the tokens from the token account to the Vault:
-        _internalTransfer(_address, VAULT, _amount);
+        _internalTransfer(wallet, VAULT, amount);
 
-        emit StoredInVault(_address, _amount);
+        emit StoredInVault(wallet, amount);
     }
 
-    function storeAllInVault() external {
-        _storeAllInVault();
-    }
-
-    function _storeAllInVault() internal onlyAdmin nonReentrant {
+    /// @notice Move all tokens to the VAULT account.
+    function storeAllInVault() external onlyAdmin nonReentrant {
         address[] memory accs = _getAccounts();
         for (uint256 i = 0; i < accs.length; ++i) {
             address acc = accs[i];
@@ -193,11 +179,8 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         }
     }
 
-    function storeUnclaimedInVault() external {
-        return _storeUnclaimedInVault();
-    }
-
-    function _storeUnclaimedInVault() internal nonReentrant {
+    /// @notice Move tokens sent manually (to this smart contract) to the VAULT account.
+    function storeUnclaimedInVault() external onlyAdmin nonReentrant {
         uint256 amount = _unclaimedTokenBalance();
         require(amount > 0, "No unclaimed token balance to store in Vault");
 
@@ -207,11 +190,8 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         emit StoreUnclaimedInVault(amount);
     }
 
-    function drainVault() external {
-        _drainVault();
-    }
-
-    function _drainVault() internal onlyAdmin nonReentrant {
+    /// @notice Remove all tokens attributed to VAULT account and transfer them to drainVaultReceiver address.
+    function drainVault() external onlyAdmin nonReentrant {
         uint256 vaultBalance = tokenBalances[VAULT];
 
         // Remove all the tokens from Vault:
@@ -234,12 +214,12 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         return token;
     }
 
-    function getTokenBalance(address _address) external view returns (uint256) {
-        return tokenBalances[_address];
+    function getTokenBalance(address wallet) external view returns (uint256) {
+        return tokenBalances[wallet];
     }
 
-    function isAccount(address _address) external view returns (bool) {
-        return accounts.contains(_address);
+    function isAccount(address wallet) external view returns (bool) {
+        return accounts.contains(wallet);
     }
 
     function numAccounts() external view returns (uint256) {
@@ -289,27 +269,19 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
     // INTERNAL FUNCTIONS:
     //
 
-    function _addToBalance(address _account, uint256 _amount) internal {
-        tokenBalances[_account] = SafeMath.add(
-            tokenBalances[_account],
-            _amount
-        );
-        tokenBalances[TOTAL] = SafeMath.add(tokenBalances[TOTAL], _amount);
+    function _addToBalance(address _account, uint256 amount) internal {
+        tokenBalances[_account] = SafeMath.add(tokenBalances[_account], amount);
+        tokenBalances[TOTAL] = SafeMath.add(tokenBalances[TOTAL], amount);
     }
 
-    function _subFromBalance(address _account, uint256 _amount) internal {
-        tokenBalances[_account] = SafeMath.sub(
-            tokenBalances[_account],
-            _amount
-        );
-        tokenBalances[TOTAL] = SafeMath.sub(tokenBalances[TOTAL], _amount);
+    function _subFromBalance(address _account, uint256 amount) internal {
+        tokenBalances[_account] = SafeMath.sub(tokenBalances[_account], amount);
+        tokenBalances[TOTAL] = SafeMath.sub(tokenBalances[TOTAL], amount);
     }
 
-    function _internalTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal {
+    function _internalTransfer(address from, address to, uint256 amount)
+        internal
+    {
         _subFromBalance(from, amount);
         _addToBalance(to, amount);
     }
