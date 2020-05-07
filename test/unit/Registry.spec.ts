@@ -38,7 +38,6 @@ describe("Test whitelist registry", function () {
 
     // Set the admins:
     defaultAdmins = [
-      await signers[0].getAddress(),
       await signers[1].getAddress(),
       await signers[2].getAddress(),
     ];

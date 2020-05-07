@@ -155,6 +155,7 @@ contract RCSTKToken is
         );
         iterations[0].startBlock = block.number;
         iterations[0].active = true;
+        unpause();
     }
 
     /// @notice Change iteration phase.
