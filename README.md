@@ -23,6 +23,12 @@ To build, the contracts, run:
 
 This will compile the contracts with the configured version of solc, and generate the type-safe contract code with Typechain.
 
+## Running the linter:
+
+To run the Typescripts linter on the tests, run:
+
+`npm run lint-tests` or `npm run lint-tests:fix` to fix auto-fixable errors.
+
 ## Running tests:
 
 To run local tests (on Buidler EVM), run:

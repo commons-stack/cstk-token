@@ -12,7 +12,9 @@
     "clean": "npx buidler clean",
     "test": "npx buidler test",
     "test:gasreport": "GAS_REPORTER_ENABLED=true npx buidler test --network localhost",
-    "coverage": "npx buidler typechain && npx buidler coverage --network coverage"
+    "coverage": "npx buidler typechain && npx buidler coverage --network coverage",
+    "lint-test": "npx eslint test --ext .ts,.tsx",
+    "lint-test:fix": "npx eslint test --ext .ts,.tsx --fix"
   },
   "repository": {
     "type": "git",
@@ -35,10 +37,15 @@
     "@types/fs-extra": "^8.1.0",
     "@types/mocha": "^7.0.1",
     "@types/node": "^13.13.4",
+    "@typescript-eslint/eslint-plugin": "^2.31.0",
+    "@typescript-eslint/parser": "^2.31.0",
     "buidler-gas-reporter": "^0.1.3",
     "buidler-typechain": "0.0.5",
     "chai": "^4.2.0",
     "dotenv": "^8.2.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.3",
     "ethereum-waffle": "^2.4.1",
     "ethers": "^4.0.47",
     "fs-extra": "^9.0.0",
