@@ -36,6 +36,10 @@ contract RCSTKToken is
     /// @param _escapeHatchCaller (address) Escape Hatch caller.
     /// @param _escapeHatchDestination (address) Escape Hatch destination.
     constructor(
+        uint256[] memory numerators,
+        uint256[] memory denominators,
+        uint256[] memory softCaps,
+        uint256[] memory hardCaps,
         address daiTokenAddress,
         address cstkTokenAddress,
         address cstkTokenManagerAddress,
@@ -59,12 +63,28 @@ contract RCSTKToken is
             _escapeHatchCaller,
             _escapeHatchDestination
         );
-
+        require(
+            numerators.length == denominators.length &&
+                denominators.length == softCaps.length &&
+                softCaps.length == hardCaps.length,
+            "numerators, denominators, softCaps and hardCaps need to be of same length."
+        );
+        /**
         newIteration(5, 2, 984000, 1250000);
         newIteration(2, 1, 796000, 1000000);
         newIteration(3, 2, 1170000, 1500000);
         newIteration(5, 4, 820000, 1000000);
         newIteration(1, 1, 2950000, 3750000);
+         */
+        for (uint256 index = 0; index < numerators.length; index++) {
+            newIteration(
+                numerators[index],
+                denominators[index],
+                softCaps[index],
+                hardCaps[index]
+            );
+        }
+        
         for (uint256 index = 0; index < _admins.length; index++) {
             addPauser(_admins[index]);
         }
