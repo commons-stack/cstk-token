@@ -3,6 +3,8 @@ import { BuidlerConfig, task, usePlugin } from "@nomiclabs/buidler/config";
 import dotenv from "dotenv";
 import { remove } from "fs-extra";
 
+require("./scripts/accounts");
+
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin("@nomiclabs/buidler-etherscan");
 usePlugin("buidler-typechain");
