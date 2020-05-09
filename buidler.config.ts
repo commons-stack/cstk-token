@@ -1,6 +1,7 @@
-import { BuidlerConfig, usePlugin, task } from "@nomiclabs/buidler/config";
-import { remove } from "fs-extra";
+import { BuidlerConfig, task, usePlugin } from "@nomiclabs/buidler/config";
+
 import dotenv from "dotenv";
+import { remove } from "fs-extra";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin("@nomiclabs/buidler-etherscan");
@@ -56,8 +57,8 @@ task("clean", "Cleans the cache, deletes artifacts and generated coverage report
   .addFlag("saveCoverage", "Skip deleting coverage")
   .setAction(async ({ saveCoverage }, bre, runSuper) => {
     if (!saveCoverage) {
-      await remove("config");
-      await remove("config.json");
+      await remove("coverage");
+      await remove("coverage.json");
     }
     await runSuper(); // Run the default clean operation:
   });
