@@ -1,6 +1,7 @@
-import { BuidlerConfig, usePlugin, task } from "@nomiclabs/buidler/config";
-import { remove } from "fs-extra";
+import { BuidlerConfig, task, usePlugin } from "@nomiclabs/buidler/config";
+
 import dotenv from "dotenv";
+import { remove } from "fs-extra";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin("@nomiclabs/buidler-etherscan");
