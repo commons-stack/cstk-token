@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import { remove } from "fs-extra";
 
 require("./scripts/accounts");
+require("./scripts/deploy");
+require("./scripts/resolvedAccounts");
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin("@nomiclabs/buidler-etherscan");
