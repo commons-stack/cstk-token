@@ -1,17 +1,15 @@
 import { Provider } from "ethers/providers";
 import { resolveAccounts } from "./util/resolveAccounts";
 import { task } from "@nomiclabs/buidler/config";
-import { utils } from "ethers";
 
 async function logAccount(provider: Provider, name: string, address: string) {
-  const balance = utils.formatEther(await provider.getBalance(address));
-  console.log(`${name}:  ${address}\t${balance}`);
+  console.log(`${name}:     \t${address}`);
 }
 
 task("resolved-accounts", "Print resolved account names and balances").setAction(
   async (_, { ethers }) => {
     console.log("======================================================================");
-    console.log("NAME:\tADDRESS:\t\t\t\t\tETH:");
+    console.log("NAME:     \tADDRESS:");
     console.log("======================================================================");
 
     const signers = await ethers.getSigners();
