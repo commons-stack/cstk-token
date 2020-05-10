@@ -5,6 +5,7 @@ import { remove } from "fs-extra";
 
 require("./scripts/accounts");
 require("./scripts/deploy");
+require("./scripts/publish");
 require("./scripts/resolvedAccounts");
 
 usePlugin("@nomiclabs/buidler-ethers");

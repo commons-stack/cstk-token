@@ -1,4 +1,5 @@
-import { ManifestEntry } from "./util/manifestFile";
+import { ManifestEntry, writeManifestEntryFile } from "./util/manifestFile";
+
 import config from "../buidler.config";
 import { join } from "path";
 import { task } from "@nomiclabs/buidler/config";
@@ -17,18 +18,14 @@ task(
 
   const instance = await factory.deploy(...args);
 
-  const entryFile = join(
-    config.paths?.artifacts || "artifacts",
-    `${name}.${network.name}.manifest.json`,
-  );
-  const entry: ManifestEntry = {
+  await writeManifestEntryFile(config.paths?.artifacts || "artifacts", {
+    name,
+    network: network.name,
     chainID: instance.deployTransaction.chainId,
     address: instance.address,
-    blockHash: instance.deployTransaction.blockHash,
+    blockNumber: instance.deployTransaction.blockNumber,
     txHash: instance.deployTransaction.hash,
-  };
-
-  await writeFile(entryFile, JSON.stringify(entry, null, 2), "utf8");
+  });
 
   log(`Deployed ${name} to ${instance.address}, tx hash: ${instance.deployTransaction.hash}`);
 
