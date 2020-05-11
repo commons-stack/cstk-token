@@ -29,9 +29,14 @@ contract RCSTKToken is
 {
     /// @notice This will also deploy the Registry and TokenBank.
     /// @dev
+    /// @param numerators (uint256[]) multiplication factors for the iterations.
+    /// @param denominators (uint256[]) multiplication factors for the iterations.
+    /// @param softCaps (uint256[]) soft caps for the iterations, in DAI.
+    /// @param hardCaps (uint256[]) hard caps for the iterations, in DAI.
     /// @param daiTokenAddress (address) DAI token address. 0x6b175474e89094c44da98b954eedeac495271d0f on Mainnet. https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f
     /// @param cstkTokenAddress (address) CSTK Token address. 0xd53b50a6213ee7ff2fcc41a7cf69d22ded0a43b3 on Mainnet. https://etherscan.io/address/0xd53b50a6213ee7ff2fcc41a7cf69d22ded0a43b3
-    /// @param cstkTokenManagerAddress (address)
+    /// @param cstkTokenManagerAddress (address) CSTK Token Manager address.
+    /// @param registryAddress (address) Registry address.
     /// @param _admins (address[]) list of admin addresses for rCSTK, registry and TokenBank.
     /// @param _escapeHatchCaller (address) Escape Hatch caller.
     /// @param _escapeHatchDestination (address) Escape Hatch destination.
@@ -84,7 +89,7 @@ contract RCSTKToken is
                 hardCaps[index]
             );
         }
-        
+
         for (uint256 index = 0; index < _admins.length; index++) {
             addPauser(_admins[index]);
         }
@@ -268,6 +273,10 @@ contract RCSTKToken is
         _buyTokens(_iteration, _amountDAI);
     }
 
+    /// @notice
+    /// @dev
+    /// @param _iteration (uint8)
+    /// @param _amountDAI (uint256)
     function _buyTokens(uint8 _iteration, uint256 _amountDAI)
         internal
         whenNotPaused
@@ -350,6 +359,11 @@ contract RCSTKToken is
         );
     }
 
+    /// @notice
+    /// @dev
+    /// @param _iteration (uint8)
+    /// @param _amountTokens (uint256)
+    /// @param _daiAmount (uint256)
     function _ditchTokens(uint256 _amountTokens, uint256 _daiAmount)
         internal
         whenNotPaused
@@ -385,12 +399,19 @@ contract RCSTKToken is
         );
     }
 
+    /// @notice
+    /// @dev
+    /// @param _amountTokens (uint256)
     function _redeemTokens(uint256 _amountTokens) internal whenNotPaused {
         ///mint CSTK tokens
         cstkTokenManager.mint(msg.sender, _amountTokens);
         _burn(msg.sender, _amountTokens);
     }
 
+    /// @notice
+    /// @dev
+    /// @param _idx (uint256)
+    /// @return  (bool)
     function _iterationExists(uint256 _idx) internal view returns (bool) {
         // TODO: check the criteria to match for an initialized iteration:
         return iterations[_idx].softCap != 0;
