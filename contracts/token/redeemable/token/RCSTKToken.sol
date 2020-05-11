@@ -249,7 +249,7 @@ contract RCSTKToken is
         );
 
         require(
-            iterations[_iteration].totalReceived ==
+            iterations[_iteration].totalReceived <=
                 iterations[_iteration].hardCap,
             "This iteration has reached its hardCap already."
         );
