@@ -25,6 +25,7 @@ describe("Test rCSTK Token", function () {
   let owner: string;
   let defaultAdmins: string[];
   let defaultContributors: string[];
+  let defaultAllowances: number[];
   let otherSigner: Signer;
   let other: string;
 
@@ -53,9 +54,21 @@ describe("Test rCSTK Token", function () {
     deployer: Signer = ownerSigner,
   ): Promise<RCSTKToken> {
     const factory = new RCSTKTokenFactory(deployer);
-    return factory.deploy(numerators, denominators, softCaps, hardCaps, 
-      daiTokenAddress, cstkTokenAddress, cstkTokenManagerAddress, registryAddress, 
-      admins, _escapeHatchCaller, _escapeHatchDestination);
+    const rcstk = await factory.deploy(
+      numerators,
+      denominators,
+      softCaps,
+      hardCaps,
+      daiTokenAddress,
+      cstkTokenAddress,
+      cstkTokenManagerAddress,
+      registryAddress,
+      admins,
+      _escapeHatchCaller,
+      _escapeHatchDestination,
+    );
+    await rcstk.deployed;
+    return rcstk;
   }
 
   let registry: Registry;
@@ -65,7 +78,9 @@ describe("Test rCSTK Token", function () {
     deployer: Signer = ownerSigner,
   ): Promise<Registry> {
     const factory = new RegistryFactory(deployer);
-    return factory.deploy(admins);
+    const registry = await factory.deploy(admins);
+    await registry.deployed;
+    return registry;
   }
 
   let daiToken: ERC20;
@@ -73,21 +88,20 @@ describe("Test rCSTK Token", function () {
 
   async function deployERC20(deployer: Signer = ownerSigner): Promise<ERC20> {
     const factory = new ERC20Factory(deployer);
-    return factory.deploy();
+    const erc20 = await factory.deploy();
+    await erc20.deployed;
+    return erc20;
   }
 
   beforeEach(async function () {
     signers = await ethers.getSigners();
-    console.log("Signers length: ", signers.length);
 
     // Owner:
     ownerSigner = signers[0];
     owner = await ownerSigner.getAddress();
 
     // Set the admins:
-    defaultAdmins = [
-      await signers[1].getAddress()
-    ];
+    defaultAdmins = [await signers[1].getAddress()];
     defaultContributors = [
       await signers[2].getAddress(),
       await signers[3].getAddress(),
@@ -99,17 +113,12 @@ describe("Test rCSTK Token", function () {
       await signers[9].getAddress(),
       await signers[10].getAddress(),
       await signers[11].getAddress(),
-      await signers[12].getAddress(),
-      await signers[13].getAddress(),
-      await signers[14].getAddress(),
-      await signers[15].getAddress(),
-      await signers[16].getAddress(),
-      await signers[17].getAddress(),
-      await signers[18].getAddress()
     ];
 
+    defaultAllowances = [500, 500, 500, 500, 500, 500, 500, 500, 500, 500];
+
     // Other:
-    otherSigner = signers[19];
+    otherSigner = signers[12];
     other = await otherSigner.getAddress();
 
     // Deploy registry contract:
@@ -129,6 +138,7 @@ describe("Test rCSTK Token", function () {
 
     // Deploy rCSTK contract:
     rCSTKToken = await deploy();
+    await registry.registerContributors(defaultContributors, defaultAllowances);
   });
 
   describe("When deploying registry contract", function () {
@@ -160,6 +170,11 @@ describe("Test rCSTK Token", function () {
     });
 
     it("Should not be paused after started", async function () {
+      await rCSTKToken.startFirstIteration();
+      expect(await rCSTKToken.paused()).to.be.false;
+    });
+
+    it("Should go smoothly", async function () {
       await rCSTKToken.startFirstIteration();
       expect(await rCSTKToken.paused()).to.be.false;
     });

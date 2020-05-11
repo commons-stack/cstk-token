@@ -70,14 +70,14 @@ contract RCSTKToken is
             "numerators, denominators, softCaps and hardCaps need to be of same length."
         );
         /**
-        newIteration(5, 2, 984000, 1250000);
-        newIteration(2, 1, 796000, 1000000);
-        newIteration(3, 2, 1170000, 1500000);
-        newIteration(5, 4, 820000, 1000000);
-        newIteration(1, 1, 2950000, 3750000);
+        _newIteration(5, 2, 984000, 1250000);
+        _newIteration(2, 1, 796000, 1000000);
+        _newIteration(3, 2, 1170000, 1500000);
+        _newIteration(5, 4, 820000, 1000000);
+        _newIteration(1, 1, 2950000, 3750000);
          */
         for (uint256 index = 0; index < numerators.length; index++) {
-            newIteration(
+            _newIteration(
                 numerators[index],
                 denominators[index],
                 softCaps[index],
@@ -142,7 +142,7 @@ contract RCSTKToken is
     /// @param _softCap (uint256) in DAI
     /// @param _hardCap (uint256) in DAI
     /// @return iterationID (uint256) new iteration's ID
-    function newIteration(
+    function _newIteration(
         uint256 _numerator,
         uint256 _denominator,
         uint256 _softCap,

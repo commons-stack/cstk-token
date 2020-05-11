@@ -37,10 +37,7 @@ describe("Test whitelist registry", function () {
     owner = await ownerSigner.getAddress();
 
     // Set the admins:
-    defaultAdmins = [
-      await signers[1].getAddress(),
-      await signers[2].getAddress(),
-    ];
+    defaultAdmins = [await signers[1].getAddress(), await signers[2].getAddress()];
     defaultContributors = [
       await signers[3].getAddress(),
       await signers[4].getAddress(),
