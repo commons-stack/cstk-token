@@ -234,7 +234,7 @@ contract RCSTKToken is
     /// @dev Maybe better to change function name to something else than buy.
     /// @param _iteration (uint8) iteration at which contributor wants to donate.
     /// @param _amountDAI (uint256) DAI amount the user wants to donate.
-    function buyTokens(uint8 _iteration, uint256 _amountDAI)
+    function donate(uint8 _iteration, uint256 _amountDAI)
         public
         whenNotPaused
         onlyContributor(msg.sender)
@@ -275,19 +275,19 @@ contract RCSTKToken is
                 iterations[iteration].hardCap;
                 amountDAI = SafeMath.sub(amountDAI, amountDAIcurrentIteration)
             ) {
-                _buyTokens(iteration, amountDAIcurrentIteration);
+                _donate(iteration, amountDAIcurrentIteration);
                 _switchIteration(iteration, iteration + 1);
                 iteration++;
             }
         }
-        _buyTokens(_iteration, _amountDAI);
+        _donate(_iteration, _amountDAI);
     }
 
     /// @notice
     /// @dev
     /// @param _iteration (uint8)
     /// @param _amountDAI (uint256)
-    function _buyTokens(uint8 _iteration, uint256 _amountDAI)
+    function _donate(uint8 _iteration, uint256 _amountDAI)
         internal
         whenNotPaused
     {
