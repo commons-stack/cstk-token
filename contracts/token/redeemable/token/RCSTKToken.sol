@@ -105,7 +105,6 @@ contract RCSTKToken is
         uint256 startBlock; /// @dev when did this iteration start
         uint256 softCapTimestamp; /// @dev when the softcap was reached
         uint256 totalReceived; /// @dev total DAI received in this iteration
-        mapping(address => uint256) spendable; /// @dev who has spent how much of his balance (redeemed for DAI or converted to CSTK)
     }
 
     /// @notice Number of existing iterations.
@@ -322,10 +321,6 @@ contract RCSTKToken is
             iterations[_iteration].totalReceived,
             _amountDAI
         );
-        iterations[_iteration].spendable[msg.sender] = SafeMath.add(
-            iterations[_iteration].spendable[msg.sender],
-            amountTokens
-        );
         _mint(msg.sender, amountTokens);
         if (
             iterations[_iteration].totalReceived >
@@ -356,10 +351,6 @@ contract RCSTKToken is
             iterations[_iteration].softCapTimestamp == 0,
             "This iteration has reached its softCap already."
         );
-        require(
-            iterations[_iteration].spendable[msg.sender] >= _amountTokens,
-            ""
-        );
 
         uint256 _amountDAI = SafeMath.mul(
             _amountTokens,
@@ -373,10 +364,6 @@ contract RCSTKToken is
         iterations[_iteration].totalReceived = SafeMath.sub(
             iterations[_iteration].totalReceived,
             _amountDAI
-        );
-        iterations[_iteration].spendable[msg.sender] = SafeMath.sub(
-            iterations[_iteration].spendable[msg.sender],
-            _amountTokens
         );
     }
 
@@ -408,23 +395,15 @@ contract RCSTKToken is
             iterations[_iteration].active,
             "This iteration is not active at this time."
         );
-        require(
-            iterations[_iteration].spendable[msg.sender] >= _amountTokens,
-            ""
-        );
-        _redeemTokens(_amountTokens);
-        iterations[_iteration].spendable[msg.sender] = SafeMath.sub(
-            iterations[_iteration].spendable[msg.sender],
-            _amountTokens
-        );
+        _redeemTokens(msg.sender, _amountTokens);
     }
 
     /// @notice
     /// @dev
     /// @param _amountTokens (uint256)
-    function _redeemTokens(uint256 _amountTokens) internal whenNotPaused {
+    function _redeemTokens(address contributor, uint256 _amountTokens) internal whenNotPaused {
         ///mint CSTK tokens
-        cstkTokenManager.mint(msg.sender, _amountTokens);
+        cstkTokenManager.mint(contributor, _amountTokens);
         _burn(msg.sender, _amountTokens);
     }
 
