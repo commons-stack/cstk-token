@@ -191,6 +191,16 @@ contract RCSTKToken is
         public
         onlyAdmin
     {
+        _switchIteration(_iterationFrom, _iterationTo);
+    }
+
+    /// @notice Change iteration phase.
+    /// @dev _iterationFrom is probably useless.
+    /// @param _iterationFrom (uint8) current iteration
+    /// @param _iterationTo (uint8) iteration wewant to switch to
+    function _switchIteration(uint8 _iterationFrom, uint8 _iterationTo)
+        internal
+    {
         require(
             _iterationFrom == _iterationTo - 1,
             "_iterationTo need to follow _iterationFrom"
@@ -266,7 +276,7 @@ contract RCSTKToken is
                 amountDAI = SafeMath.sub(amountDAI, amountDAIcurrentIteration)
             ) {
                 _buyTokens(iteration, amountDAIcurrentIteration);
-                switchIteration(iteration, iteration + 1);
+                _switchIteration(iteration, iteration + 1);
                 iteration++;
             }
         }
