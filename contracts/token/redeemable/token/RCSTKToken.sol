@@ -131,6 +131,8 @@ contract RCSTKToken is
 
     event FinishRaise();
 
+    event MaximumTrustReached(address wallet);
+
     /// @dev only contributors whitelisted in the Registry will be allowed to use functions modified by this.
     modifier onlyContributor(address wallet) {
         require(
@@ -295,13 +297,25 @@ contract RCSTKToken is
             SafeMath.mul(_amountDAI, iterations[_iteration].numerator),
             iterations[_iteration].denominator
         );
-        require(
+        if (
             balanceOf(msg.sender) +
                 cstkToken.balanceOf(msg.sender) +
-                amountTokens <=
+                amountTokens >=
+            registry.getAllowed(msg.sender)
+        ) {
+            amountTokens = SafeMath.sub(
                 registry.getAllowed(msg.sender),
-            "Buying that amount of tokens would go over the allowance."
-        );
+                SafeMath.add(
+                    balanceOf(msg.sender),
+                    cstkToken.balanceOf(msg.sender)
+                )
+            );
+            _amountDAI = SafeMath.div(
+                SafeMath.mul(amountTokens, iterations[_iteration].denominator),
+                iterations[_iteration].numerator
+            );
+            emit MaximumTrustReached(msg.sender);
+        }
         bank.deposit(msg.sender, _amountDAI);
 
         iterations[_iteration].totalReceived = SafeMath.add(
@@ -344,7 +358,7 @@ contract RCSTKToken is
         );
         require(
             iterations[_iteration].spendable[msg.sender] >= _amountTokens,
-            "This iteration has reached its softCap already."
+            ""
         );
 
         uint256 _amountDAI = SafeMath.mul(
@@ -396,7 +410,7 @@ contract RCSTKToken is
         );
         require(
             iterations[_iteration].spendable[msg.sender] >= _amountTokens,
-            "This iteration has reached its softCap already."
+            ""
         );
         _redeemTokens(_amountTokens);
         iterations[_iteration].spendable[msg.sender] = SafeMath.sub(
