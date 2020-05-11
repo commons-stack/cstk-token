@@ -12,38 +12,53 @@ export interface ResolvedAccounts {
   deployer: string;
   admins: string[];
   other: string;
+  all: string[];
   signers: {
     owner: Signer;
     deployer: Signer;
     admins: Signer[];
     other: Signer;
+    all: Signer[];
   };
 }
 
 export const TOTAL_ACCOUNTS = 10;
 
 export async function resolveAccounts(signers: Signer[]): Promise<ResolvedAccounts> {
-  const owner = await signers[resolvedAccountIndexes["owner"]].getAddress();
-  const other = await signers[resolvedAccountIndexes["other"]].getAddress();
+  let accounts: string[] = [];
+  for (const sig of signers) {
+    accounts.push(await sig.getAddress());
+  }
+
+  const owner = accounts[resolvedAccountIndexes["owner"]];
+  const ownerSigner = signers[resolvedAccountIndexes["owner"]];
+
+  const deployer = owner;
+  const deployerSigner = ownerSigner;
+
+  const other = accounts[resolvedAccountIndexes["other"]];
+  const otherSigner = signers[resolvedAccountIndexes["other"]];
 
   let admins: string[] = [];
   let adminSigners: Signer[] = [];
   const adminIndexes = resolvedAccountIndexes["admins"];
   for (const idx in adminIndexes) {
-    const signer = signers[idx];
-    adminSigners.push(signer);
-    admins.push(await signer.getAddress());
+    adminSigners.push(signers[idx]);
+    admins.push(accounts[idx]);
   }
+
   return {
     owner,
-    deployer: owner,
+    deployer,
     admins,
     other,
+    all: accounts,
     signers: {
-      owner: signers[resolvedAccountIndexes["owner"]],
-      deployer: signers[resolvedAccountIndexes["deployer"]],
+      owner: ownerSigner,
+      deployer: deployerSigner,
       admins: adminSigners,
-      other: signers[resolvedAccountIndexes["other"]],
+      other: otherSigner,
+      all: signers,
     },
   };
 }

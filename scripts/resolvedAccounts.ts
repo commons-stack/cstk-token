@@ -1,4 +1,4 @@
-import { resolveAccounts } from "./util/resolveAccounts";
+import { resolveAccounts } from "./fixture/resolveAccounts";
 import { task } from "@nomiclabs/buidler/config";
 
 async function logAccount(name: string, address: string) {
