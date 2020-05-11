@@ -291,12 +291,9 @@ contract RCSTKToken is
         internal
         whenNotPaused
     {
-        uint256 amountTokens = SafeMath.mul(
-            _amountDAI,
-            SafeMath.div(
-                iterations[_iteration].numerator,
-                iterations[_iteration].denominator
-            )
+        uint256 amountTokens = SafeMath.div(
+            SafeMath.mul(_amountDAI, iterations[_iteration].numerator),
+            iterations[_iteration].denominator
         );
         require(
             balanceOf(msg.sender) +
@@ -371,7 +368,6 @@ contract RCSTKToken is
 
     /// @notice
     /// @dev
-    /// @param _iteration (uint8)
     /// @param _amountTokens (uint256)
     /// @param _daiAmount (uint256)
     function _ditchTokens(uint256 _amountTokens, uint256 _daiAmount)
