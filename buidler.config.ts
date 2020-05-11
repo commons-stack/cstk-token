@@ -59,11 +59,15 @@ const config: BuidlerConfig = {
 };
 
 task("clean", "Cleans the cache, deletes artifacts and generated coverage reports")
-  .addFlag("saveCoverage", "Skip deleting coverage")
-  .setAction(async ({ saveCoverage }, bre, runSuper) => {
-    if (!saveCoverage) {
+  .addFlag("keepCoverage", "Skip deleting coverage")
+  .addFlag("keepDist", "Keep generated contract acessor code")
+  .setAction(async ({ keepCoverage, keepDist }, bre, runSuper) => {
+    if (!keepCoverage) {
       await remove("coverage");
       await remove("coverage.json");
+    }
+    if (!keepDist) {
+      await remove("dist");
     }
     await runSuper(); // Run the default clean operation:
   });
