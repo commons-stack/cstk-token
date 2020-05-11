@@ -1,3 +1,4 @@
+import { Contract } from "ethers";
 import { parseEther } from "ethers/utils";
 import { resolveAccounts } from "./fixture/resolveAccounts";
 import { task } from "@nomiclabs/buidler/config";
@@ -21,13 +22,12 @@ task("deploy", "Deploy the smart contracts")
 
     // TODO: figure out a way to interact with the deployed contract without using Typechain bindings:
 
-    const daiMock = await run("deploy-contract", {
+    const daiMock = (await run("deploy-contract", {
       name: "DAIMock",
       args: [resolved.all, parseEther("1000000000")],
       deployer: resolved.signers.deployer,
       quiet,
-      force,
-    });
+    })) as Contract;
 
     // Registry contract:
 
@@ -36,7 +36,16 @@ task("deploy", "Deploy the smart contracts")
       args: [resolved.admins],
       deployer: resolved.signers.deployer,
       quiet,
-      force,
+    });
+
+    // TokenBank contract:
+
+    // TODO: check parameters:
+    await run("deploy-contract", {
+      name: "TokenBank",
+      args: [daiMock.address, resolved.admins, resolved.owner, resolved.other, resolved.other],
+      deployer: resolved.signers.deployer,
+      quiet,
     });
 
     // Finalize deployment:
@@ -44,6 +53,6 @@ task("deploy", "Deploy the smart contracts")
     log(`\nFinished deployment, writing deployment manifest for network ${network.name}`);
     await writeDeploymentFile(config.paths.artifacts, {
       network: network.name,
-      contracts: ["DAIMock", "Registry"],
+      contracts: ["DAIMock", "Registry", "TokenBank"],
     });
   });
