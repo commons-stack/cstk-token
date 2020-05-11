@@ -14,6 +14,7 @@ export interface ManifestEntry {
   address: string;
   blockNumber: number | undefined;
   txHash: string | undefined;
+  deployArgs: any[] | undefined;
 }
 
 export async function readDeploymentFile(

@@ -22,6 +22,7 @@ task(
     address: instance.address,
     blockNumber: instance.deployTransaction.blockNumber,
     txHash: instance.deployTransaction.hash,
+    deployArgs: [...args],
   });
 
   log(`Deployed ${name} to ${instance.address}, tx hash: ${instance.deployTransaction.hash}`);
