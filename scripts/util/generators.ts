@@ -28,10 +28,10 @@ export async function generateABIAndBytecode(
 }
 
 async function parseArtifact(
-  path: string,
+  artifactPath: string,
   contractName: string,
 ): Promise<{ abi: Array<any>; bytecode: string }> {
-  const artifact = await readJSON(join(path, `${contractName}.json`));
+  const artifact = await readJSON(join(artifactPath, `${contractName}.json`));
 
   return {
     abi: artifact.abi,
