@@ -226,7 +226,7 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         return accounts.length();
     }
 
-    function getAccounts() external view returns (address[] memory) {
+    function getAccounts() external view returns (address[] memory accounts) {
         return _getAccounts();
     }
 

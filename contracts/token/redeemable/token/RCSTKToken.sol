@@ -129,8 +129,9 @@ contract RCSTKToken is
     TokenBank internal bank;
 
     event FinishRaise();
-
     event MaximumTrustReached(address wallet);
+    event SoftCapReached(uint8 iteration);
+    event HardCapReached(uint8 iteration);
 
     /// @dev only contributors whitelisted in the Registry will be allowed to use functions modified by this.
     modifier onlyContributor(address wallet) {
@@ -277,6 +278,7 @@ contract RCSTKToken is
                 amountDAI = SafeMath.sub(amountDAI, amountDAIcurrentIteration)
             ) {
                 _donate(iteration, amountDAIcurrentIteration);
+                emit HardCapReached(iteration);
                 _switchIteration(iteration, iteration + 1);
                 iteration++;
             }
@@ -302,6 +304,7 @@ contract RCSTKToken is
                 amountTokens >=
             registry.getAllowed(msg.sender)
         ) {
+            /// @dev we only take donation up to the amount that would get them to their maximum CSTK allowance.
             amountTokens = SafeMath.sub(
                 registry.getAllowed(msg.sender),
                 SafeMath.add(
@@ -315,19 +318,28 @@ contract RCSTKToken is
             );
             emit MaximumTrustReached(msg.sender);
         }
-        bank.deposit(msg.sender, _amountDAI);
-
-        iterations[_iteration].totalReceived = SafeMath.add(
-            iterations[_iteration].totalReceived,
-            _amountDAI
-        );
-        _mint(msg.sender, amountTokens);
-        if (
-            iterations[_iteration].totalReceived >
-            iterations[_iteration].softCap
-        ) {
-            iterations[_iteration].softCapTimestamp = block.number;
-            bank.storeAllInVault();
+        if (_amountDAI != 0) {
+            bank.deposit(msg.sender, _amountDAI);
+            iterations[_iteration].totalReceived = SafeMath.add(
+                iterations[_iteration].totalReceived,
+                _amountDAI
+            );
+            if (iterations[_iteration].softCapTimestamp == 0) {
+                _mint(msg.sender, amountTokens);
+                if (
+                    iterations[_iteration].totalReceived >
+                    iterations[_iteration].softCap &&
+                    iterations[_iteration].softCapTimestamp == 0
+                ) {
+                    iterations[_iteration].softCapTimestamp = block.number;
+                    bank.storeAllInVault();
+                    emit SoftCapReached(_iteration);
+                }
+            } else {
+                /// @dev If softCap was reached before donation we directly mint CSTK tokens and store donation into the Vault.
+                cstkTokenManager.mint(contributor, _amountTokens);
+                bank.storeInVault(msg.sender, _amountDAI);
+            }
         }
     }
 
@@ -398,12 +410,24 @@ contract RCSTKToken is
         _redeemTokens(msg.sender, _amountTokens);
     }
 
+    /// @notice redeem rCSTK tokens for CSTK tokens for all accounts in TokenBank. Irreversible.
+    function redeemAllContributors() public onlyAdmin whenNotPaused {
+        address[] memory accounts = bank.getAccounts();
+        for (uint256 index = 0; index < accounts.length; index++) {
+            _redeemTokens(accounts[index], balanceOf(accounts[index]));
+        }
+    }
+
     /// @notice
     /// @dev
     /// @param _amountTokens (uint256)
-    function _redeemTokens(address contributor, uint256 _amountTokens) internal whenNotPaused {
+    function _redeemTokens(address contributor, uint256 _amountTokens)
+        internal
+        whenNotPaused
+    {
         ///mint CSTK tokens
         cstkTokenManager.mint(contributor, _amountTokens);
+        //TODO : move dai in bank vault ?
         _burn(msg.sender, _amountTokens);
     }
 
