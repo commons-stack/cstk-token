@@ -50,3 +50,19 @@ Coverage runs its own instance of ganache-cli, and requires port 8555 to be open
 To clean up build artefacts, typechain generated code and coverage reports, run:
 
 `npm run clean`
+
+## Deploying contracts and publishing:
+
+Contract deployment is handled by the `deploy.ts` script. The script relies on running the `deploy:contract` task to perform the actual contract deployment, while the script code handles initialization and wiring the deployed contracts.
+
+To ensure proper publishing, all contracts with a **public** interface should be added to the deployment file - write their _exact_ names to the `contracts` parameter of the `writeDeploymentFile`.
+
+To run the deployment, run::
+
+`npm run deploy`
+
+Deployed contracts can be **published** - this will generate JS code for acessing the ABI, bytecode for each contract as well as the address on the network it was deployed.
+
+To publish, run:
+
+`npm run publish`

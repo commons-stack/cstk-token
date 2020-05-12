@@ -10,6 +10,8 @@
     "build": "npx buidler compile && npx buidler typechain",
     "build:typechain": "npx buidler typechain",
     "clean": "npx buidler clean",
+    "deploy": "npx buidler deploy --network localhost",
+    "publish": "npx buidler publish localhost",
     "test": "npx buidler test",
     "test:gasreport": "GAS_REPORTER_ENABLED=true npx buidler test --network localhost",
     "coverage": "npx buidler typechain && npx buidler coverage --network coverage",

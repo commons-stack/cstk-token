@@ -6,13 +6,12 @@ import { writeDeploymentFile } from "./util/manifestFile";
 
 require("./util/deployContract");
 
-task("deploy", "Deploy the smart contracts")
+task("deploy", "Run the deployment on the connected network and generate manifest")
   .addFlag("force", "Ignore cache on contract compilation")
   .addFlag("quiet", "Do not print to stdout")
   .setAction(async ({ force, quiet }, { config, ethers, run, network }) => {
     const log = quiet ? () => {} : console.log;
 
-    // Run compile task, pass --force flag:
     await run("compile", { force });
 
     const signers = await ethers.getSigners();
@@ -22,7 +21,7 @@ task("deploy", "Deploy the smart contracts")
 
     // TODO: figure out a way to interact with the deployed contract without using Typechain bindings:
 
-    const daiMock = (await run("deploy-contract", {
+    const daiMock = (await run("deploy:contract", {
       name: "DAIMock",
       args: [resolved.all, parseEther("1000000000")],
       deployer: resolved.signers.deployer,
@@ -31,7 +30,7 @@ task("deploy", "Deploy the smart contracts")
 
     // Registry contract:
 
-    await run("deploy-contract", {
+    await run("deploy:contract", {
       name: "Registry",
       args: [resolved.admins],
       deployer: resolved.signers.deployer,
@@ -41,7 +40,7 @@ task("deploy", "Deploy the smart contracts")
     // TokenBank contract:
 
     // TODO: check parameters:
-    await run("deploy-contract", {
+    await run("deploy:contract", {
       name: "TokenBank",
       args: [daiMock.address, resolved.admins, resolved.owner, resolved.other, resolved.other],
       deployer: resolved.signers.deployer,
