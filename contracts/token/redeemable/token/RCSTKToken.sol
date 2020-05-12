@@ -371,7 +371,6 @@ contract RCSTKToken is
 
     /// @notice
     /// @dev
-    /// @param _iteration (uint8)
     /// @param _amountTokens (uint256)
     /// @param _daiAmount (uint256)
     function _ditchTokens(uint256 _amountTokens, uint256 _daiAmount)
