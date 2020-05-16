@@ -228,26 +228,6 @@ contract RCSTKToken is
         iterations[_iterationTo].startBlock = block.number;
     }
 
-    /// @notice Start the process of finishing the fundraise.
-    function startEndRaise() public onlyAdmin {
-        currentState = State.END_RAISE_STARTED;
-        endRaiseTimestamp = block.number;
-    }
-
-    /// @notice Finish the fundraise.
-    /// @dev Probably better to make it definitive instead of pausing.
-    function finishEndRaise() public onlyAdmin {
-        require(
-            currentState == State.END_RAISE_STARTED &&
-                block.timestamp > endRaiseTimestamp + FIVE_DAYS_IN_SECONDS,
-            "End of raise has not started more than 5 days ago."
-        );
-        bank.storeAllInVault();
-        bank.drainVault();
-        currentState = State.FINISHED;
-        emit FinishRaise();
-    }
-
     /// @notice Donate DAI and get rCSTK tokens in exchange.
     /// @dev Maybe better to change function name to something else than buy.
     /// @param _iteration (uint8) iteration at which contributor wants to donate.
@@ -399,7 +379,6 @@ contract RCSTKToken is
     /// @param _amountTokens (uint256) rCSTK tokensamount to convert to CSTK.
     function redeemTokens(uint8 _iteration, uint256 _amountTokens)
         public
-        onlyIfActive
         onlyContributor(msg.sender)
     {
         require(
@@ -435,7 +414,7 @@ contract RCSTKToken is
         address contributor,
         uint8 _iteration,
         uint256 _amountTokens
-    ) internal onlyIfActive {
+    ) internal {
         ///mint CSTK tokens
         cstkTokenManager.mint(contributor, _amountTokens);
 
@@ -457,5 +436,39 @@ contract RCSTKToken is
     function _iterationExists(uint256 _idx) internal view returns (bool) {
         // TODO: check the criteria to match for an initialized iteration:
         return iterations[_idx].softCap != 0;
+    }
+
+    /// @notice Start the process of finishing the fundraise.
+    function pause() public onlyAdmin {
+        require(currentState == State.ACTIVE, "Current state is not active");
+        currentState = State.INACTIVE;
+    }
+
+    /// @notice Start the process of finishing the fundraise.
+    function unpause() public onlyAdmin {
+        require(
+            currentState == State.INACTIVE,
+            "Current state is not inactive"
+        );
+        currentState = State.ACTIVE;
+    }
+
+    /// @notice Start the process of finishing the fundraise.
+    function startEndRaise() public onlyAdmin onlyIfActive {
+        currentState = State.END_RAISE_STARTED;
+        endRaiseTimestamp = block.number;
+    }
+
+    /// @notice Finish the fundraise.
+    function finishEndRaise() public onlyAdmin {
+        require(
+            currentState == State.END_RAISE_STARTED &&
+                block.timestamp > endRaiseTimestamp + FIVE_DAYS_IN_SECONDS,
+            "End of raise has not started more than 5 days ago."
+        );
+        bank.storeAllInVault();
+        bank.drainVault();
+        currentState = State.FINISHED;
+        emit FinishRaise();
     }
 }
