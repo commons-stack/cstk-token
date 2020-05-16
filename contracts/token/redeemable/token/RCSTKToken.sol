@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "../../../registry/AdminRole.sol";
 import "../../../registry/Registry.sol";
 import "./TokenManager.sol";
@@ -23,7 +22,6 @@ contract RCSTKToken is
     ERC20NonTransferrable,
     ERC20Detailed,
     ERC20Mintable,
-    ERC20Pausable,
     AdminRole,
     Escapable
 {
@@ -51,7 +49,8 @@ contract RCSTKToken is
         address registryAddress,
         address[] memory _admins,
         address _escapeHatchCaller, /// @notice the RCSTK Token, Registry and TokenBank share the same escape hatch caller and destination.
-        address payable _escapeHatchDestination
+        address payable _escapeHatchDestination,
+        address _drainVaultReceiver
     )
         public
         ERC20Detailed("Redeemable CSTK Token", "rCSTK", 18)
@@ -64,7 +63,7 @@ contract RCSTKToken is
         bank = new TokenBank(
             daiTokenAddress,
             _admins,
-            _escapeHatchDestination,
+            _drainVaultReceiver,
             _escapeHatchCaller,
             _escapeHatchDestination
         );
@@ -75,11 +74,11 @@ contract RCSTKToken is
             "numerators, denominators, softCaps and hardCaps need to be of same length."
         );
         /**
-        _newIteration(5, 2, 984000, 1250000);
-        _newIteration(2, 1, 796000, 1000000);
-        _newIteration(3, 2, 1170000, 1500000);
-        _newIteration(5, 4, 820000, 1000000);
-        _newIteration(1, 1, 2950000, 3750000);
+            _newIteration(5, 2, 984000, 1250000);
+            _newIteration(2, 1, 796000, 1000000);
+            _newIteration(3, 2, 1170000, 1500000);
+            _newIteration(5, 4, 820000, 1000000);
+            _newIteration(1, 1, 2950000, 3750000);
          */
         for (uint256 index = 0; index < numerators.length; index++) {
             _newIteration(
@@ -89,11 +88,7 @@ contract RCSTKToken is
                 hardCaps[index]
             );
         }
-
-        for (uint256 index = 0; index < _admins.length; index++) {
-            addPauser(_admins[index]);
-        }
-        pause();
+        currentState = State.CREATED;
     }
 
     struct Iteration {
@@ -106,6 +101,9 @@ contract RCSTKToken is
         uint256 softCapTimestamp; /// @dev when the softcap was reached
         uint256 totalReceived; /// @dev total DAI received in this iteration
     }
+
+    enum State {CREATED, ACTIVE, INACTIVE, END_RAISE_STARTED, FINISHED}
+    State currentState;
 
     /// @notice Number of existing iterations.
     uint256 internal numIterations;
@@ -128,6 +126,8 @@ contract RCSTKToken is
     /// @notice Token Bank smart smart contract.
     TokenBank internal bank;
 
+    uint256 endRaiseTimestamp;
+
     event FinishRaise();
     event MaximumTrustReached(address wallet);
     event SoftCapReached(uint8 iteration);
@@ -138,6 +138,14 @@ contract RCSTKToken is
         require(
             registry.isContributor(wallet),
             "Only contributors can call this."
+        );
+        _;
+    }
+
+    modifier onlyIfActive() {
+        require(
+            currentState == State.ACTIVE,
+            "THis contract is not in ACTIVE state."
         );
         _;
     }
@@ -182,53 +190,61 @@ contract RCSTKToken is
         );
         iterations[0].startBlock = block.number;
         iterations[0].active = true;
-        unpause();
     }
 
     /// @notice Change iteration phase.
-    /// @dev _iterationFrom is probably useless.
-    /// @param _iterationFrom (uint8) current iteration
     /// @param _iterationTo (uint8) iteration wewant to switch to
-    function switchIteration(uint8 _iterationFrom, uint8 _iterationTo)
-        public
-        onlyAdmin
-    {
-        _switchIteration(_iterationFrom, _iterationTo);
-    }
-
-    /// @notice Change iteration phase.
-    /// @dev _iterationFrom is probably useless.
-    /// @param _iterationFrom (uint8) current iteration
-    /// @param _iterationTo (uint8) iteration wewant to switch to
-    function _switchIteration(uint8 _iterationFrom, uint8 _iterationTo)
-        internal
-    {
+    function switchIteration(uint8 _iterationTo) public onlyAdmin onlyIfActive {
         require(
-            _iterationFrom == _iterationTo - 1,
-            "_iterationTo need to follow _iterationFrom"
+            totalSupply() == 0,
+            "Before switching iteration all rCSTK tokens should be redeemed."
         );
         require(
-            iterations[_iterationFrom].active == true,
+            iterations[_iterationTo - 1].active == true,
             "_iterationFrom is not the active iteration."
         );
 
         require(
-            iterations[_iterationFrom].softCapTimestamp > 0,
+            iterations[_iterationTo - 1].softCapTimestamp > 0,
             "softCap has not been reached yet on the active iteration."
         );
 
-        iterations[_iterationFrom].active = false;
+        require(
+            block.timestamp >
+                iterations[_iterationTo - 1].softCapTimestamp +
+                    FIVE_DAYS_IN_SECONDS ||
+                iterations[_iterationTo - 1].totalReceived >=
+                iterations[_iterationTo - 1].hardCap,
+            "Softcap timestamp has been reached less than 5 days ago and hard cap has not been reached."
+        );
+
+        require(
+            totalSupply() == 0,
+            "Before switching iteration all rCSTK tokens should be redeemed."
+        );
+
+        iterations[_iterationTo - 1].active = false;
         iterations[_iterationTo].active = true;
         iterations[_iterationTo].startBlock = block.number;
-        bank.storeAllInVault();
+    }
+
+    /// @notice Start the process of finishing the fundraise.
+    function startEndRaise() public onlyAdmin {
+        currentState = State.END_RAISE_STARTED;
+        endRaiseTimestamp = block.number;
     }
 
     /// @notice Finish the fundraise.
     /// @dev Probably better to make it definitive instead of pausing.
-    function finishRaise() public onlyAdmin {
-        pause();
+    function finishEndRaise() public onlyAdmin {
+        require(
+            currentState == State.END_RAISE_STARTED &&
+                block.timestamp > endRaiseTimestamp + FIVE_DAYS_IN_SECONDS,
+            "End of raise has not started more than 5 days ago."
+        );
         bank.storeAllInVault();
         bank.drainVault();
+        currentState = State.FINISHED;
         emit FinishRaise();
     }
 
@@ -236,10 +252,12 @@ contract RCSTKToken is
     /// @dev Maybe better to change function name to something else than buy.
     /// @param _iteration (uint8) iteration at which contributor wants to donate.
     /// @param _amountDAI (uint256) DAI amount the user wants to donate.
+    /// @return  DAI amount donated by the user.
     function donate(uint8 _iteration, uint256 _amountDAI)
         public
-        whenNotPaused
+        onlyIfActive
         onlyContributor(msg.sender)
+        returns (uint256 amountDAIDonated)
     {
         require(
             _iteration < numIterations,
@@ -251,53 +269,16 @@ contract RCSTKToken is
         );
 
         require(
-            iterations[_iteration].totalReceived <=
+            iterations[_iteration].totalReceived <
                 iterations[_iteration].hardCap,
             "This iteration has reached its hardCap already."
         );
 
-        require(
-            block.timestamp <
-                iterations[_iteration].softCapTimestamp + FIVE_DAYS_IN_SECONDS,
-            "Softcap timestamp has been reached more than 5 days ago."
-        );
-
-        if (
-            iterations[_iteration].totalReceived + _amountDAI >=
-            iterations[_iteration].hardCap
-        ) {
-            ///switch iteration if passing hardcap
-            uint8 iteration = _iteration;
-            uint256 amountDAI = _amountDAI;
-
-            for (
-                uint256 amountDAIcurrentIteration = iterations[iteration]
-                    .hardCap - iterations[iteration].totalReceived;
-                iterations[iteration].totalReceived + _amountDAI >=
-                iterations[iteration].hardCap;
-                amountDAI = SafeMath.sub(amountDAI, amountDAIcurrentIteration)
-            ) {
-                _donate(iteration, amountDAIcurrentIteration);
-                emit HardCapReached(iteration);
-                _switchIteration(iteration, iteration + 1);
-                iteration++;
-            }
-        }
-        _donate(_iteration, _amountDAI);
-    }
-
-    /// @notice
-    /// @dev
-    /// @param _iteration (uint8)
-    /// @param _amountDAI (uint256)
-    function _donate(uint8 _iteration, uint256 _amountDAI)
-        internal
-        whenNotPaused
-    {
         uint256 amountTokens = SafeMath.div(
             SafeMath.mul(_amountDAI, iterations[_iteration].numerator),
             iterations[_iteration].denominator
         );
+
         if (
             balanceOf(msg.sender) +
                 cstkToken.balanceOf(msg.sender) +
@@ -305,6 +286,11 @@ contract RCSTKToken is
             registry.getAllowed(msg.sender)
         ) {
             /// @dev we only take donation up to the amount that would get them to their maximum CSTK allowance.
+            _amountDAI = SafeMath.div(
+                SafeMath.mul(amountTokens, iterations[_iteration].denominator),
+                iterations[_iteration].numerator
+            );
+
             amountTokens = SafeMath.sub(
                 registry.getAllowed(msg.sender),
                 SafeMath.add(
@@ -312,35 +298,58 @@ contract RCSTKToken is
                     cstkToken.balanceOf(msg.sender)
                 )
             );
-            _amountDAI = SafeMath.div(
-                SafeMath.mul(amountTokens, iterations[_iteration].denominator),
-                iterations[_iteration].numerator
-            );
             emit MaximumTrustReached(msg.sender);
         }
+
+        if (
+            _amountDAI >=
+            iterations[_iteration].hardCap -
+                iterations[_iteration].totalReceived
+        ) {
+            /// @dev donate only up to the hardcap.
+            _amountDAI =
+                iterations[_iteration].hardCap -
+                iterations[_iteration].totalReceived;
+
+            amountTokens = SafeMath.div(
+                SafeMath.mul(_amountDAI, iterations[_iteration].numerator),
+                iterations[_iteration].denominator
+            );
+        }
+
         if (_amountDAI != 0) {
             bank.deposit(msg.sender, _amountDAI);
             iterations[_iteration].totalReceived = SafeMath.add(
                 iterations[_iteration].totalReceived,
                 _amountDAI
             );
+
+            if (
+                iterations[_iteration].totalReceived >
+                iterations[_iteration].softCap &&
+                iterations[_iteration].softCapTimestamp == 0
+            ) {
+                /// @dev Soft Cap is reached.
+                iterations[_iteration].softCapTimestamp = block.number;
+                bank.storeAllInVault();
+                emit SoftCapReached(_iteration);
+            }
+
             if (iterations[_iteration].softCapTimestamp == 0) {
                 _mint(msg.sender, amountTokens);
-                if (
-                    iterations[_iteration].totalReceived >
-                    iterations[_iteration].softCap &&
-                    iterations[_iteration].softCapTimestamp == 0
-                ) {
-                    iterations[_iteration].softCapTimestamp = block.number;
-                    bank.storeAllInVault();
-                    emit SoftCapReached(_iteration);
-                }
             } else {
-                /// @dev If softCap was reached before donation we directly mint CSTK tokens and store donation into the Vault.
-                cstkTokenManager.mint(contributor, _amountTokens);
+                /// @dev If softCap was reached we directly mint CSTK tokens and store donation into the Vault.
+                cstkTokenManager.mint(msg.sender, amountTokens);
                 bank.storeInVault(msg.sender, _amountDAI);
             }
+            if (
+                iterations[_iteration].totalReceived >=
+                iterations[_iteration].hardCap
+            ) {
+                emit HardCapReached(_iteration);
+            }
         }
+        return _amountDAI;
     }
 
     /// @notice burns rCSTK tokens, get some DAI back. Boooooh :-/
@@ -348,9 +357,15 @@ contract RCSTKToken is
     /// @param _amountTokens (uint256) amount of tokens to give back.
     function ditchTokens(uint8 _iteration, uint256 _amountTokens)
         public
-        whenNotPaused
         onlyContributor(msg.sender)
     {
+        require(
+            currentState == State.ACTIVE ||
+                (endRaiseTimestamp != 0 &&
+                    currentState == State.FINISHED &&
+                    block.timestamp > endRaiseTimestamp + FIVE_DAYS_IN_SECONDS),
+            "This contract is not in ACTIVE state or 5 days after end of fundraise."
+        );
         require(
             _iteration < numIterations,
             "This iteration does not exist yet."
@@ -371,24 +386,12 @@ contract RCSTKToken is
                 iterations[_iteration].numerator
             )
         );
-        _ditchTokens(_amountTokens, _amountDAI);
-
+        _burn(msg.sender, _amountTokens);
+        bank.withdraw(msg.sender, _amountDAI);
         iterations[_iteration].totalReceived = SafeMath.sub(
             iterations[_iteration].totalReceived,
             _amountDAI
         );
-    }
-
-    /// @notice
-    /// @dev
-    /// @param _amountTokens (uint256)
-    /// @param _daiAmount (uint256)
-    function _ditchTokens(uint256 _amountTokens, uint256 _daiAmount)
-        internal
-        whenNotPaused
-    {
-        _burn(msg.sender, _amountTokens);
-        bank.withdraw(msg.sender, _daiAmount);
     }
 
     /// @notice redeem rCSTK tokens for CSTK tokens. Irreversible.
@@ -396,7 +399,7 @@ contract RCSTKToken is
     /// @param _amountTokens (uint256) rCSTK tokensamount to convert to CSTK.
     function redeemTokens(uint8 _iteration, uint256 _amountTokens)
         public
-        whenNotPaused
+        onlyIfActive
         onlyContributor(msg.sender)
     {
         require(
@@ -407,27 +410,43 @@ contract RCSTKToken is
             iterations[_iteration].active,
             "This iteration is not active at this time."
         );
-        _redeemTokens(msg.sender, _amountTokens);
+        _redeemTokens(msg.sender, _iteration, _amountTokens);
     }
 
     /// @notice redeem rCSTK tokens for CSTK tokens for all accounts in TokenBank. Irreversible.
-    function redeemAllContributors() public onlyAdmin whenNotPaused {
-        address[] memory accounts = bank.getAccounts();
+    function redeemContributors(address[] memory accounts, uint8 _iteration)
+        public
+        onlyAdmin
+    {
         for (uint256 index = 0; index < accounts.length; index++) {
-            _redeemTokens(accounts[index], balanceOf(accounts[index]));
+            _redeemTokens(
+                accounts[index],
+                _iteration,
+                balanceOf(accounts[index])
+            );
         }
     }
 
     /// @notice
     /// @dev
+    /// @param contributor (address)
     /// @param _amountTokens (uint256)
-    function _redeemTokens(address contributor, uint256 _amountTokens)
-        internal
-        whenNotPaused
-    {
+    function _redeemTokens(
+        address contributor,
+        uint8 _iteration,
+        uint256 _amountTokens
+    ) internal onlyIfActive {
         ///mint CSTK tokens
         cstkTokenManager.mint(contributor, _amountTokens);
-        //TODO : move dai in bank vault ?
+
+        uint256 _amountDAI = SafeMath.mul(
+            _amountTokens,
+            SafeMath.div(
+                iterations[_iteration].denominator,
+                iterations[_iteration].numerator
+            )
+        );
+        bank.storeInVault(contributor, _amountDAI);
         _burn(msg.sender, _amountTokens);
     }
 
