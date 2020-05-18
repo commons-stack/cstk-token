@@ -226,12 +226,12 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         return accounts.length();
     }
 
-    function getAccounts() external view returns (address[] memory accounts) {
+    function getAccounts() external view returns (address[] memory accountsList) {
         return _getAccounts();
     }
 
     /// @dev getAccounts() implementation
-    function _getAccounts() internal view returns (address[] memory) {
+    function _getAccounts() internal view returns (address[] memory accountsList) {
         return EnumerableSet.enumerate(accounts);
     }
 
@@ -251,7 +251,7 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         return (accs, balances);
     }
 
-    /// @dev Return the token balance not claimed by Vault or any account in the TokenBank
+    /// @return the token balance not claimed by Vault or any account in the TokenBank
     function unclaimedTokenBalance() external view returns (uint256) {
         return _unclaimedTokenBalance();
     }

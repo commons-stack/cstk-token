@@ -1,21 +1,29 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.17;
 
-import "./RegistryAbstract.sol";
-
+import "./AdminRole.sol";
 
 /// @title Registry to whitelist contributors
 /// @author Nelson Melina
-contract Registry is RegistryAbstract {
+contract Registry is AdminRole {
+    /// @param _admins (address[]) List of admins for the Registry contract.
+    constructor(address[] memory _admins) public AdminRole(_admins) {}
+
+    struct ContributorInfo {
+        address wallet;
+        uint256 allowed;
+        bool active;
+    }
+
+    event ContributorAdded(address wallet);
+    event ContributorRemoved(address wallet);
+
     /// @notice Map of contributors, contributors[address]
     mapping(address => ContributorInfo) contributors;
 
-    /// @param _admins (address[]) List of admins for the Registry contract.
-    constructor(address[] memory _admins) public RegistryAbstract(_admins) {}
-
     /// @notice Register a list of contributors and the amount of CSTK token they are allowed to own.
     /// @dev wallets and allowed need to be in the same order
-    /// @param wallets (address[]) List of contributors' addresses to be registered
-    /// @param allowed (uint256[]) List of allowed amounts for each contributors.
+    /// @param wallets () List of contributors' addresses to be registered
+    /// @param allowed () List of allowed amounts for each contributors.
     function registerContributors(
         address[] memory wallets,
         uint256[] memory allowed
@@ -61,3 +69,4 @@ contract Registry is RegistryAbstract {
         return contributors[wallet].active;
     }
 }
+
