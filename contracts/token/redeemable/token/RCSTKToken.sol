@@ -103,7 +103,7 @@ contract RCSTKToken is
     }
 
     enum State {CREATED, ACTIVE, INACTIVE, END_RAISE_STARTED, FINISHED}
-    State currentState;
+    State internal currentState;
 
     /// @notice Number of existing iterations.
     uint256 internal numIterations;
@@ -470,5 +470,9 @@ contract RCSTKToken is
         bank.drainVault();
         currentState = State.FINISHED;
         emit FinishRaise();
+    }
+
+    function getCurrentState() external view returns (State) {
+        return currentState;
     }
 }
