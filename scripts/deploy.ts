@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
-import { parseEther } from "ethers/utils";
 import { resolveAccounts } from "./fixture/resolveAccounts";
 import { task } from "@nomiclabs/buidler/config";
+import { utils } from "ethers";
 import { writeDeploymentFile } from "./util/manifestFile";
 
 require("./util/deployContract");
@@ -23,7 +23,7 @@ task("deploy", "Run the deployment on the connected network and generate manifes
 
     const daiMock = (await run("deploy:contract", {
       name: "DAIMock",
-      args: [resolved.all, parseEther("1000000000")],
+      args: [resolved.all, utils.parseEther("1000000000")],
       deployer: resolved.signers.deployer,
       quiet,
     })) as Contract;
