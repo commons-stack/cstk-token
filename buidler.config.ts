@@ -15,12 +15,12 @@ usePlugin("buidler-typechain");
 usePlugin("buidler-gas-reporter");
 usePlugin("solidity-coverage");
 
-// Default values:
-const SOLC_VERSION = process.env.SOLC_VERSION || "0.5.17";
-const SOLC_OPTIMIZER_ENABLED = process.env.SOLC_OPTIMIZER_ENABLED ? true : false;
-const GAS_REPORTER_ENABLED = process.env.GAS_REPORTER_ENABLED ? true : false;
-// const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
+const MNEMONIC = process.env.MNEMONIC || "";
+const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
+const SOLC_VERSION = process.env.SOLC_VERSION || "";
+const SOLC_OPTIMIZER_ENABLED = process.env.SOLC_OPTIMIZER_ENABLED === "true";
+const GAS_REPORTER_ENABLED = process.env.GAS_REPORTER_ENABLED === "true";
 
 const config: BuidlerConfig = {
   paths: {
