@@ -1,7 +1,8 @@
 import { BuidlerConfig, task, usePlugin } from "@nomiclabs/buidler/config";
 
-import dotenv from "dotenv";
 import { remove } from "fs-extra";
+
+require("dotenv-safe").config();
 
 require("./scripts/accounts");
 require("./scripts/deploy");
@@ -13,8 +14,6 @@ usePlugin("@nomiclabs/buidler-etherscan");
 usePlugin("buidler-typechain");
 usePlugin("buidler-gas-reporter");
 usePlugin("solidity-coverage");
-
-dotenv.config();
 
 // Default values:
 const SOLC_VERSION = process.env.SOLC_VERSION || "0.5.17";
