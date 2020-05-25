@@ -84,7 +84,6 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         AdminRole(_admins)
         Escapable(_escapeHatchCaller, _escapeHatchDestination)
     {
-        // TODO: Verify that token has ERC20 interface?
         require(_token != address(0), "Deposit token cannot be zero adress");
         require(
             _drainVaultReceiver != address(0),
