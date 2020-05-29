@@ -110,30 +110,30 @@ contract RCSTKToken is
 
     /// @notice State of the fundraise
     enum State {CREATED, ACTIVE, INACTIVE, END_RAISE_STARTED, FINISHED}
-    State internal currentState;
+    State public currentState;
 
     /// @notice Number of existing iterations
-    uint256 internal numIterations;
+    uint256 public numIterations;
 
     /// @notice List of iterations: iterations[index]
-    mapping(uint256 => Iteration) internal _iterations;
+    mapping(uint256 => Iteration) public _iterations;
 
     /// @notice Commons Stack ERC20 token smart contract
-    IERC20 internal cstkToken;
+    IERC20 public cstkToken;
 
     /// @notice Whitelisting Registry smart contract
-    Registry internal registry;
+    Registry public registry;
 
     /// @notice Commons Stack Token manager smart contract
-    TokenManager internal cstkTokenManager;
+    TokenManager public cstkTokenManager;
 
     /// @notice Constant for 5 days in seconds
     uint256 private constant FIVE_DAYS_IN_SECONDS = 432000;
 
     /// @notice Token Bank smart smart contract
-    TokenBank internal bank;
+    TokenBank public bank;
 
-    uint256 endRaiseTimestamp;
+    uint256 public endRaiseTimestamp;
 
     event FinishRaise();
     event MaximumTrustReached(address wallet);
@@ -254,11 +254,6 @@ contract RCSTKToken is
             "Hardcap has not been reached, and it has been less than 5 days since the softcap was reached"
         );
 
-        require(
-            totalSupply() == 0,
-            "Before switching iteration all rCSTK tokens should be redeemed"
-        );
-
         _iterations[_iterationTo - 1].active = false;
         _iterations[_iterationTo].active = true;
         _iterations[_iterationTo].startBlock = block.number;
@@ -318,7 +313,7 @@ contract RCSTKToken is
 
             emit MaximumTrustReached(msg.sender);
         }
-
+///TODO this should be able to be equal ?
         if (
             _amountDAI >=
             _iterations[_iteration].hardCap -
@@ -349,7 +344,7 @@ contract RCSTKToken is
                 _iterations[_iteration].softCapTimestamp == 0
             ) {
                 /// @dev Soft Cap is reached.
-                _iterations[_iteration].softCapTimestamp = block.number;
+                _iterations[_iteration].softCapTimestamp = block.timestamp;
                 bank.storeAllInVault();
                 emit SoftCapReached(_iteration);
             }
@@ -359,6 +354,7 @@ contract RCSTKToken is
             } else {
                 /// @dev If softCap was reached we directly mint CSTK tokens and store donation into the Vault.
                 cstkTokenManager.mint(msg.sender, amountTokens);
+                /// TODO if its already done, what happens.
                 bank.storeInVault(msg.sender, _amountDAI);
             }
             if (
@@ -376,16 +372,19 @@ contract RCSTKToken is
     /// @param _amountTokens (uint256) amount of tokens to give back.
     function ditchTokens(uint256 _iteration, uint256 _amountTokens)
         public
-        onlyContributor(msg.sender)
+        onlyContributor(msg.sender) /// TODO Remove this and add check that they have tokens.
         iterationExist(_iteration)
         iterationActive(_iteration)
         iterationSoftCapNotReached(_iteration)
     {
+
+
+        /// @dev Comment that. Change name of FIVE_DAYS_IN_SECONDS compared to the one in softcap.
         require(
             currentState == State.ACTIVE ||
                 (endRaiseTimestamp != 0 &&
-                    currentState == State.FINISHED &&
-                    block.timestamp > endRaiseTimestamp + FIVE_DAYS_IN_SECONDS),
+                    currentState == State.END_RAISE_STARTED &&
+                    block.timestamp < endRaiseTimestamp + FIVE_DAYS_IN_SECONDS),
             "This contract is not in ACTIVE state or 5 days after end of fundraise."
         );
 
@@ -400,6 +399,7 @@ contract RCSTKToken is
             _amountDAI
         );
     }
+    /// TODO remove iteration number.
 
     /// @notice redeem rCSTK tokens for CSTK tokens. Irreversible.
     /// @param _iteration (uint256) iteration ID
@@ -471,7 +471,7 @@ contract RCSTKToken is
     /// @notice Start the process of finishing the fundraise.
     function startEndRaise() public onlyAdmin onlyIfActive {
         currentState = State.END_RAISE_STARTED;
-        endRaiseTimestamp = block.number;
+        endRaiseTimestamp = block.timestamp;
     }
 
     /// @notice Finish the fundraise.
@@ -486,52 +486,6 @@ contract RCSTKToken is
         currentState = State.FINISHED;
         emit FinishRaise();
     }
-
-    function getCurrentState() external view returns (State) {
-        return currentState;
-    }
-
-    function getIteration(uint256 index)
-        external
-        view
-        returns (
-            bool active,
-            uint256 numerator,
-            uint256 denominator,
-            uint256 softCap,
-            uint256 hardCap,
-            uint256 startBlock,
-            uint256 softCapTimestamp,
-            uint256 totalReceived
-        )
-    {
-        require(index < numIterations, "This iteration does not exist");
-
-        return (
-            _iterations[index].active,
-            _iterations[index].numerator,
-            _iterations[index].denominator,
-            _iterations[index].softCap,
-            _iterations[index].hardCap,
-            _iterations[index].startBlock,
-            _iterations[index].softCapTimestamp,
-            _iterations[index].totalReceived
-        );
-    }
-
-    function getNumIterations() external view returns (uint256) {
-        return numIterations;
-    }
-
-    function getRegistryAddress() external view returns (address) {
-        return address(registry);
-    }
-
-    function getCSTKTokenManagerAddress() external view returns (address) {
-        return address(cstkTokenManager);
-    }
-
-    function getBankAddress() external view returns (address) {
-        return address(bank);
-    }
+    
+    /// TODO : Add Get current iteration number.
 }
