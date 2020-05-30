@@ -154,16 +154,18 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         external
         onlyAdmin
         nonReentrant
+        returns (uint256 amountStored)
     {
-        require(
-            tokenBalances[wallet] >= amount,
-            "Address has insufficient token balance balance to send to Vault"
-        );
-
+        if (amount < tokenBalances[wallet]) {
+            amountStored = amount;
+        } else {
+            amountStored = tokenBalances[wallet];
+        }
         // Move the tokens from the token account to the Vault:
-        _internalTransfer(wallet, VAULT, amount);
 
-        emit StoredInVault(wallet, amount);
+        _internalTransfer(wallet, VAULT, amountStored);
+        emit StoredInVault(wallet, amountStored);
+        return amountStored;
     }
 
     /// @notice Move all tokens to the VAULT account.
@@ -225,12 +227,20 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         return accounts.length();
     }
 
-    function getAccounts() external view returns (address[] memory accountsList) {
+    function getAccounts()
+        external
+        view
+        returns (address[] memory accountsList)
+    {
         return _getAccounts();
     }
 
     /// @dev getAccounts() implementation
-    function _getAccounts() internal view returns (address[] memory accountsList) {
+    function _getAccounts()
+        internal
+        view
+        returns (address[] memory accountsList)
+    {
         return EnumerableSet.enumerate(accounts);
     }
 
@@ -278,9 +288,11 @@ contract TokenBank is ReentrancyGuard, AdminRole, Escapable {
         tokenBalances[TOTAL] = SafeMath.sub(tokenBalances[TOTAL], amount);
     }
 
-    function _internalTransfer(address from, address to, uint256 amount)
-        internal
-    {
+    function _internalTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
         _subFromBalance(from, amount);
         _addToBalance(to, amount);
     }
