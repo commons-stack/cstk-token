@@ -2,6 +2,7 @@ pragma solidity ^0.5.17;
 
 import "./AdminRole.sol";
 
+
 /// @title Registry to whitelist contributors
 /// @author Nelson Melina
 contract Registry is AdminRole {
@@ -30,7 +31,7 @@ contract Registry is AdminRole {
     ) public onlyAdmin {
         require(
             wallets.length == allowed.length,
-            "wallets and allowed values need to be the same length"
+            "Number of parameters mismatched"
         );
         for (uint256 i = 0; i < wallets.length; ++i) {
             require(wallets[i] != address(0), "address cannot be address(0)");
@@ -69,4 +70,3 @@ contract Registry is AdminRole {
         return contributors[wallet].active;
     }
 }
-
