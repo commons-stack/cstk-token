@@ -26,51 +26,45 @@ contract RCSTKToken is
 {
     /// @notice This will also deploy the Registry and TokenBank
     /// @dev
-    /// @param numerators (uint256[]) multiplication factors for the iterations
-    /// @param denominators (uint256[]) division factors for the iterations
-    /// @param softCaps (uint256[]) soft caps for the iterations, in DAI
-    /// @param hardCaps (uint256[]) hard caps for the iterations, in DAI
-    /// @param daiTokenAddress (address) DAI token address: 0x6b175474e89094c44da98b954eedeac495271d0f on Mainnet
-    /// @param cstkTokenAddress (address) CSTK Token address: 0xd53b50a6213ee7ff2fcc41a7cf69d22ded0a43b3 on Mainnet
-    /// @param cstkTokenManagerAddress (address) CSTK Token Manager address: 0x696e40ba67d890422421886633195013b62c9c44 on Mainnet
-    /// @param registryAddress (address) Registry address (TO BE DEPLOYED)
+    /// @param _numerators (uint256[]) multiplication factors for the iterations
+    /// @param _denominators (uint256[]) division factors for the iterations
+    /// @param _softCaps (uint256[]) soft caps for the iterations, in DAI
+    /// @param _hardCaps (uint256[]) hard caps for the iterations, in DAI
+    /// @param _tokenBankAddress (address) TokenBank address
+    /// @param _cstkTokenAddress (address) CSTK Token address: 0xd53b50a6213ee7ff2fcc41a7cf69d22ded0a43b3 on Mainnet
+    /// @param _cstkTokenManagerAddress (address) CSTK Token Manager address: 0x696e40ba67d890422421886633195013b62c9c44 on Mainnet
+    /// @param _registryAddress (address) Registry address (TO BE DEPLOYED)
     /// @param _admins (address[]) list of admin addresses for rCSTK, registry and TokenBank TODO: Define these addresses
     /// @param _escapeHatchCaller (address) Escape Hatch caller TODO: Define these addresses
     /// @param _escapeHatchDestination (address) Escape Hatch destination: TODO: Define these addresses
     constructor(
-        uint256[] memory numerators,
-        uint256[] memory denominators,
-        uint256[] memory softCaps,
-        uint256[] memory hardCaps,
-        address daiTokenAddress,
-        address cstkTokenAddress,
-        address cstkTokenManagerAddress,
-        address registryAddress,
+        uint256[] memory _numerators,
+        uint256[] memory _denominators,
+        uint256[] memory _softCaps,
+        uint256[] memory _hardCaps,
+        address _tokenBankAddress,
+        address _cstkTokenAddress,
+        address _cstkTokenManagerAddress,
+        address _registryAddress,
         address[] memory _admins,
         address _escapeHatchCaller, /// @notice the RCSTK Token, Registry and TokenBank share the same escape hatch caller and destination.
-        address payable _escapeHatchDestination,
-        address _drainVaultReceiver
+        address payable _escapeHatchDestination
     )
         public
         ERC20Detailed("Redeemable CSTK Token", "rCSTK", 18)
         AdminRole(_admins)
         Escapable(_escapeHatchCaller, _escapeHatchDestination)
     {
-        cstkToken = IERC20(cstkTokenAddress);
-        cstkTokenManager = ITokenManager(cstkTokenManagerAddress);
-        registry = Registry(registryAddress);
-        bank = new TokenBank(
-            daiTokenAddress,
-            _admins,
-            _drainVaultReceiver,
-            _escapeHatchCaller,
-            _escapeHatchDestination
-        );
+        cstkToken = IERC20(_cstkTokenAddress);
+        cstkTokenManager = ITokenManager(_cstkTokenManagerAddress);
+        registry = Registry(_registryAddress); // TODO: consider extracting IRegistry.
+        bank = TokenBank(_tokenBankAddress); // TODO: consider extracting ITokenBank.
+
         require(
-            numerators.length == denominators.length &&
-                denominators.length == softCaps.length &&
-                softCaps.length == hardCaps.length,
-            "The arrays for the numerators, denominators, softCaps and hardCaps all need to have the same length"
+            _numerators.length == _denominators.length &&
+                _denominators.length == _softCaps.length &&
+                _softCaps.length == _hardCaps.length,
+            "Parameters must be of same length"
         );
         /**
             Iteration 1: CSTK rate = 2.5 CSTK/DAI, Soft Cap =  984000 DAI, Hard Cap =  1250000 DAI
@@ -85,12 +79,12 @@ contract RCSTKToken is
             _newIteration(1, 1, 2950000, 3750000);
          */
 
-        for (uint256 index = 0; index < numerators.length; index++) {
+        for (uint256 index = 0; index < _numerators.length; index++) {
             _newIteration(
-                numerators[index],
-                denominators[index],
-                softCaps[index],
-                hardCaps[index]
+                _numerators[index],
+                _denominators[index],
+                _softCaps[index],
+                _hardCaps[index]
             );
         }
         currentState = State.CREATED;

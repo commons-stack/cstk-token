@@ -16,7 +16,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   } = await getNamedAccounts();
 
   const cstkManagerMock = await deployments.get("CSTKTokenManagerMock");
-  const daiMock = await deployments.get("DAIMock");
+  const tokenBank = await deployments.get("TokenBank");
   const registry = await deployments.get("Whitelist Registry");
 
   // Construction parameters:
@@ -25,7 +25,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   const denominators = [1, 1, 1, 1, 1];
   const softCaps = [900, 900, 900, 900, 900];
   const hardCaps = [1000, 1000, 1000, 1000, 1000];
-  const daiTokenAddress = daiMock.address;
+  const tokenBankAddress = tokenBank.address;
   const cstkTokenAddress = cstkManagerMock.address;
   const cstkTokenManagerAddress = cstkManagerMock.address;
   const registryAddress = registry.address;
@@ -36,7 +36,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   console.log("================================");
 
   console.log("\nReferencing deployed contracts:\n");
-  console.log(`DAI Token at '${daiTokenAddress}'`);
+  console.log(`TokenBank at '${tokenBankAddress}'`);
   console.log(`CSTK Token at '${cstkTokenAddress}`);
   console.log(`CSTK Token Manager at '${cstkTokenManagerAddress}'`);
   console.log(`Whitelist Registry at: '${registryAddress}`);
@@ -55,14 +55,13 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
       denominators,
       softCaps,
       hardCaps,
-      daiTokenAddress,
+      tokenBankAddress,
       cstkTokenAddress,
       cstkTokenManagerAddress,
       registryAddress,
       admins,
       escapeHatchCaller,
       escapeHatchDestination,
-      drainVaultReceiver,
     ],
   });
 
