@@ -1,11 +1,16 @@
 pragma solidity ^0.5.17;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
 
+contract DAIMock is ERC20Detailed, ERC20Mintable {
+    string internal constant NAME = "CSTK Token";
+    string internal constant SYMBOL = "CSTK";
+    uint8 internal constant DECIMALS = 18;
 
-contract DAIMock is ERC20Mintable {
     constructor(address[] memory _initialReceivers, uint256 _initialBalance)
         public
+        ERC20Detailed(NAME, SYMBOL, DECIMALS)
     {
         _mintToAll(_initialReceivers, _initialBalance);
     }

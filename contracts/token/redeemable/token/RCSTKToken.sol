@@ -9,10 +9,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "../../../registry/AdminRole.sol";
 import "../../../registry/Registry.sol";
-import "./TokenManager.sol";
+import "./ITokenManager.sol";
 import "../Escapable.sol";
 import "../vault/TokenBank.sol";
-
 
 /// @title A redeemable token for Commons Stack fundraising
 /// @author Nelson Melina
@@ -58,7 +57,7 @@ contract RCSTKToken is
         Escapable(_escapeHatchCaller, _escapeHatchDestination)
     {
         cstkToken = IERC20(cstkTokenAddress);
-        cstkTokenManager = TokenManager(cstkTokenManagerAddress);
+        cstkTokenManager = ITokenManager(cstkTokenManagerAddress);
         registry = Registry(registryAddress);
         bank = new TokenBank(
             daiTokenAddress,
@@ -74,15 +73,15 @@ contract RCSTKToken is
             "The arrays for the numerators, denominators, softCaps and hardCaps all need to have the same length"
         );
         /**
-            Iteration 1: CSTK rate = 2.5 CSTK/DAI, Soft Cap =  984000 DAI, Hard Cap =  1250000 DAI 
+            Iteration 1: CSTK rate = 2.5 CSTK/DAI, Soft Cap =  984000 DAI, Hard Cap =  1250000 DAI
             _newIteration(5, 2, 984000, 1250000);
-            Iteration 2: CSTK rate = 2 CSTK/DAI, Soft Cap =  796000 DAI, Hard Cap =  1000000 DAI 
+            Iteration 2: CSTK rate = 2 CSTK/DAI, Soft Cap =  796000 DAI, Hard Cap =  1000000 DAI
             _newIteration(2, 1, 796000, 1000000);
-            Iteration 3: CSTK rate = 1.5 CSTK/DAI, Soft Cap =  1170000 DAI, Hard Cap =  1500000 DAI 
+            Iteration 3: CSTK rate = 1.5 CSTK/DAI, Soft Cap =  1170000 DAI, Hard Cap =  1500000 DAI
             _newIteration(3, 2, 1170000, 1500000);
-            Iteration 4: CSTK rate = 1.25 CSTK/DAI, Soft Cap =  820000 DAI, Hard Cap =  1000000 DAI 
+            Iteration 4: CSTK rate = 1.25 CSTK/DAI, Soft Cap =  820000 DAI, Hard Cap =  1000000 DAI
             _newIteration(5, 4, 820000, 1000000);
-            Iteration 5: CSTK rate = 1 CSTK/DAI, Soft Cap =  2950000 DAI, Hard Cap =  3750000 DAI 
+            Iteration 5: CSTK rate = 1 CSTK/DAI, Soft Cap =  2950000 DAI, Hard Cap =  3750000 DAI
             _newIteration(1, 1, 2950000, 3750000);
          */
 
@@ -125,7 +124,7 @@ contract RCSTKToken is
     Registry public registry;
 
     /// @notice Commons Stack Token manager smart contract
-    TokenManager public cstkTokenManager;
+    ITokenManager public cstkTokenManager;
 
     /// @notice Constant for 5 days in seconds
     uint256 private constant FIVE_DAYS_IN_SECONDS = 432000;
