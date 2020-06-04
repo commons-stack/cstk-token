@@ -4,7 +4,11 @@ This repo contains the smart contracts for the CSTK token contribution.
 
 ## Installation:
 
-Clone the repo to your local machine. Run `npm install`.
+Clone the repo to your local machine.
+
+For optimal build, Node version 10 is recommended. If you use nvm, a .nvmrc file is present.
+
+Run `npm install`.
 
 If you want to run gas reports, install ganache-cli globally.
 
@@ -13,7 +17,7 @@ You can modify the env template:
 
 `cp .env.example .env`
 
-**NOTE:** The **MNEMONIC** in the template should not be loaded with mainnet eth! Your funds **will** be stolen!
+**NOTE:** The **MNEMONIC** in the env.example should not be loaded with mainnet eth! Your funds **will** be stolen!
 
 ## Building the contracts:
 
@@ -27,7 +31,7 @@ This will compile the contracts with the configured version of solc, and generat
 
 To run the Typescripts linter on the tests, run:
 
-`npm run lint-tests` or `npm run lint-tests:fix` to fix auto-fixable errors.
+`npm run lint-test` or `npm run lint-test:fix` to fix auto-fixable errors.
 
 ## Running tests:
 
