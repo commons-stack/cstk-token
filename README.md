@@ -31,7 +31,7 @@ This will compile the contracts with the configured version of solc, and generat
 
 To run the Typescripts linter on the tests, run:
 
-`npm run lint-tests` or `npm run lint-tests:fix` to fix auto-fixable errors.
+`npm run lint-test` or `npm run lint-test:fix` to fix auto-fixable errors.
 
 ## Running tests:
 
