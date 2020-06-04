@@ -4,7 +4,11 @@ This repo contains the smart contracts for the CSTK token contribution.
 
 ## Installation:
 
-Clone the repo to your local machine. Run `npm install`.
+Clone the repo to your local machine.
+
+For optimal build, Node version 10 is recommended. If you use nvm, a .nvmrc file is present.
+
+Run `npm install`.
 
 If you want to run gas reports, install ganache-cli globally.
 
@@ -13,7 +17,7 @@ You can modify the env template:
 
 `cp .env.example .env`
 
-**NOTE:** The **MNEMONIC** in the template should not be loaded with mainnet eth! Your funds **will** be stolen!
+**NOTE:** The **MNEMONIC** in the env.example should not be loaded with mainnet eth! Your funds **will** be stolen!
 
 ## Building the contracts:
 
