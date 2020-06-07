@@ -1,36 +1,16 @@
-import { BigNumber, parseEther } from "ethers/utils";
 import { deployments, ethers, getNamedAccounts } from "@nomiclabs/buidler";
 import { expect, use } from "chai";
 
+import { AddressZero } from "ethers/constants";
 import { Registry } from "../../build/types/Registry";
+import { parseEther as eth } from "ethers/utils";
 import { solidity } from "ethereum-waffle";
 
 use(solidity);
 
-describe("Test Whitelist Registry", function () {
-  interface ContributorInfo {
-    address: string;
-    maxTrust: BigNumber;
-  }
-
-  function getAddresses(cons: ContributorInfo[]): string[] {
-    const addresses: string[] = [];
-    for (const c of cons) {
-      addresses.push(c.address);
-    }
-    return addresses;
-  }
-
-  function getMaxTrust(cons: ContributorInfo[]): BigNumber[] {
-    const amts: BigNumber[] = [];
-    for (const c of cons) {
-      amts.push(c.maxTrust);
-    }
-    return amts;
-  }
-
+describe("Test Registry", function () {
   let admins: string[];
-  let contributors: ContributorInfo[];
+  let contributors: string[];
   let other: string;
 
   let registry: Registry;
@@ -43,113 +23,130 @@ describe("Test Whitelist Registry", function () {
     admins = [accounts.adminFirst, accounts.adminSecond];
 
     contributors = [
-      { address: accounts.adminFirst, maxTrust: parseEther("1") },
-      { address: accounts.adminSecond, maxTrust: parseEther("2") },
-      { address: accounts.adminThird, maxTrust: parseEther("3") },
-      { address: accounts.adminFourth, maxTrust: parseEther("4") },
+      accounts.adminFirst,
+      accounts.adminSecond,
+      accounts.adminThird,
+      accounts.adminFourth,
     ];
 
-    const deployment = await deployments.get("Whitelist Registry");
+    const deployment = await deployments.get("Registry");
     registry = (await ethers.getContractAt("Registry", deployment.address)) as Registry;
   });
 
-  describe("When deploying contract", function () {
-    it("Should deploy to a proper address", async function () {
-      expect(registry.address).to.be.properAddress;
+  it("Should set the correct admins", async function () {
+    for (const adm of admins) {
+      expect(await registry.isAdmin(adm)).to.be.true;
+    }
+    expect(await registry.isAdmin(other)).to.be.false;
+  });
+
+  describe("When registering a contributor", function () {
+    it("Should revert if not called by an Admin role", async function () {
+      const otherSigner = ethers.provider.getSigner(other);
+      await expect(
+        registry.connect(otherSigner).registerContributor(other, "10000"),
+      ).to.be.revertedWith("AdminRole: caller does not have the Admin role");
+    });
+
+    it("Should revert if address is zero address", async function () {
+      await expect(registry.registerContributor(AddressZero, "10000")).to.be.revertedWith(
+        "Cannot register zero address",
+      );
+    });
+
+    it("Should revert if max trust is zero", async function () {
+      await expect(registry.registerContributor(other, "0")).to.be.revertedWith(
+        "Cannot set a max trust of 0",
+      );
+    });
+
+    it("Should register a valid address and max trust", async function () {
+      await expect(registry.registerContributor(other, eth("1")))
+        .to.emit(registry, "ContributorAdded")
+        .withArgs(other);
+
+      expect(await registry.getMaxTrust(other)).to.eq(eth("1"));
     });
   });
 
-  describe("With the deployed contract", function () {
-    it("Should set the correct admins", async function () {
-      for (const adm of admins) {
-        expect(await registry.isAdmin(adm)).to.be.true;
-      }
-      expect(await registry.isAdmin(other)).to.be.false;
+  describe("When removing a contributor", function () {
+    it("Should revert if not called by an Admin role", async function () {
+      const otherSigner = ethers.provider.getSigner(other);
+      await expect(registry.connect(otherSigner).removeContributor(other)).to.be.revertedWith(
+        "AdminRole: caller does not have the Admin role",
+      );
     });
 
-    it("Should not register any contributors", async function () {
-      for (const con of contributors) {
-        expect(await registry.isContributor(con.address)).to.be.false;
-        expect(await registry.getAllowed(con.address)).to.be.equal(0);
-      }
+    it("Should revert if address is zero address", async function () {
+      await expect(registry.removeContributor(AddressZero)).to.be.revertedWith(
+        "Cannot remove zero address",
+      );
     });
 
-    describe("When adding contributors", function () {
-      it("Should revert if not called by an Admin role", async function () {
-        const otherSigner = ethers.provider.getSigner(other);
-        await expect(
-          registry
-            .connect(otherSigner)
-            .registerContributors(getAddresses(contributors), getMaxTrust(contributors)),
-        ).to.be.revertedWith("AdminRole: caller does not have the Admin role");
+    it("Should revert if the address is not a contributor", async function () {
+      await expect(registry.removeContributor(other)).to.be.revertedWith(
+        "Address is not a contributor",
+      );
+    });
+
+    describe("With a registered contributor", function () {
+      beforeEach(async function () {
+        await registry.registerContributor(other, eth("1"));
       });
 
-      it("Should revert if number of parameters is mismatched", async function () {
-        await expect(
-          registry.registerContributors(getAddresses(contributors), ["100000000"]),
-        ).to.be.revertedWith("Number of parameters mismatched");
-      });
-
-      it("Should revert if a contributor is a zero address", async function () {
-        await expect(
-          registry.registerContributors(
-            [ethers.constants.AddressZero, other],
-            ["1000000000", "10000000000"],
-          ),
-        ).to.be.reverted; // TODO: fix bad revert check in test
-      });
-
-      it("Should register a contributor and emit `ContributorAdded`", async function () {
-        await expect(registry.registerContributors([other], ["100000000"]))
-          .to.emit(registry, "ContributorAdded")
+      it("Should remove an existing contributor", async function () {
+        await expect(registry.removeContributor(other))
+          .to.emit(registry, "ContributorRemoved")
           .withArgs(other);
       });
+    });
+  });
 
-      describe("With registered contributors", function () {
-        beforeEach(async function () {
-          await registry.registerContributors(
-            getAddresses(contributors),
-            getMaxTrust(contributors),
-          );
-        });
-
-        it("Should register all contributors and set correct allowances", async function () {
-          for (const con of contributors) {
-            expect(await registry.isContributor(con.address)).to.be.true;
-            // TODO: figure out the right type of comparison
-            expect(await registry.getAllowed(con.address)).to.be.equal(con.maxTrust);
-          }
-        });
-
-        it("Should not set any other contributors", async function () {
-          expect(await registry.isContributor(other)).to.be.false;
-          expect(await registry.getAllowed(other)).to.be.equal(0);
-        });
-      });
+  describe("When registering multiple contributors", function () {
+    it("Should revert if not called by an admin address", async function () {
+      const signer = ethers.provider.getSigner(other);
+      await expect(
+        registry.connect(signer).registerContributors(1, [other], [eth("1")]),
+      ).to.be.revertedWith("AdminRole: caller does not have the Admin role");
     });
 
-    describe("When removing contributors", function () {
-      it("Should revert if not called by an admin role", async function () {
-        const otherSigner = ethers.provider.getSigner(other);
-        await expect(
-          registry.connect(otherSigner).removeContributors(getAddresses(contributors)),
-        ).to.be.revertedWith("AdminRole: caller does not have the Admin role");
-      });
+    it("Should revert if invald number of addresses", async function () {
+      await expect(registry.registerContributors(2, [other], [eth("1")])).to.be.revertedWith(
+        "Invalid number of addresses",
+      );
+    });
 
-      it("Should revert if removing a zero address", async function () {
-        await expect(
-          registry.removeContributors([ethers.constants.AddressZero, other]),
-        ).to.be.revertedWith("Cannot be zero address");
-      });
+    it("Should revert if invald number of max trust values", async function () {
+      await expect(registry.registerContributors(2, [other, other], [eth("1")])).to.be.revertedWith(
+        "Invalid number of trust values",
+      );
+    });
 
-      it("Should remove contributors", async function () {
-        await registry.registerContributors(getAddresses(contributors), getMaxTrust(contributors));
-        const removed = contributors[0].address;
-        await expect(registry.removeContributors([removed]))
-          .to.emit(registry, "ContributorRemoved")
-          .withArgs(removed);
-        expect(await registry.isContributor(removed)).to.be.false;
-      });
+    it("Should revert if contributors are duplicated", async function () {
+      await expect(
+        registry.registerContributors(2, [other, other], [eth("1"), eth("1")]),
+      ).to.be.revertedWith("Contributor already registered");
+    });
+
+    it("Should register a list of valid contributors", async function () {
+      const maxTrusts = [eth("1"), eth("2"), eth("3"), eth("4")];
+      await registry.registerContributors(4, contributors, maxTrusts);
+
+      expect(await registry.getContributors()).to.be.deep.eq(contributors);
+    });
+  });
+
+  describe("When getting contributor info", function () {
+    const trusts = [eth("1"), eth("2"), eth("3"), eth("4")];
+
+    beforeEach(async function () {
+      await registry.registerContributors(4, contributors, trusts);
+    });
+
+    it("Should return the right contributor info", async function () {
+      const got = await registry.getContributorInfo();
+      expect(got.contributors).to.deep.eq(contributors);
+      expect(got.trusts).to.deep.eq(trusts);
     });
   });
 });
