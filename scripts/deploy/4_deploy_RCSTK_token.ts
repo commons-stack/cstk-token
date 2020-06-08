@@ -17,7 +17,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
 
   const cstkManagerMock = await deployments.get("CSTKTokenManagerMock");
   const tokenBank = await deployments.get("TokenBank");
-  const registry = await deployments.get("Whitelist Registry");
+  const registry = await deployments.get("Registry");
 
   // Construction parameters:
 
@@ -50,7 +50,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   console.log(`TokenBank at '${tokenBankAddress}'`);
   console.log(`CSTK Token at '${cstkTokenAddress}`);
   console.log(`CSTK Token Manager at '${cstkTokenManagerAddress}'`);
-  console.log(`Whitelist Registry at: '${registryAddress}`);
+  console.log(`Registry at: '${registryAddress}`);
 
   console.log("\nReferencing addresses\n");
   console.log(`Admins: ${admins}`);

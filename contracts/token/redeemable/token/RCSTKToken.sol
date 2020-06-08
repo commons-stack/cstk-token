@@ -136,7 +136,7 @@ contract RCSTKToken is
     /// @dev only contributors whitelisted in the Registry will be allowed to use functions modified by this
     modifier onlyContributor(address wallet) {
         require(
-            registry.isContributor(wallet),
+            registry.getMaxTrust(wallet) != 0,
             "Only contributors can call this"
         );
         _;
@@ -289,11 +289,11 @@ contract RCSTKToken is
                     cstkToken.balanceOf(msg.sender)
                 ),
                 amountTokens
-            ) >= registry.getAllowed(msg.sender)
+            ) >= registry.getMaxTrust(msg.sender)
         ) {
             /// @dev If this donation would give them more CSTK tokens then they are trusted to hold, we calculate how many tokens they can be trusted to hold and reduce their donation, they can donate the extra DAI directly to the Commons Stack Donation Address
             amountTokens = SafeMath.sub(
-                registry.getAllowed(msg.sender),
+                registry.getMaxTrust(msg.sender),
                 SafeMath.add(
                     balanceOf(msg.sender),
                     cstkToken.balanceOf(msg.sender)
