@@ -32,6 +32,10 @@ contract IterationMock {
         list.subDAI(_num, _amt);
     }
 
+    function setSoftCapReached(uint16 _num, uint256 _timestamp) external {
+        list.setSoftCapReached(_num, _timestamp);
+    }
+
     function currentIteration() external view returns (bool ok, uint16 num) {
         return list.currentIteration();
     }
@@ -44,8 +48,8 @@ contract IterationMock {
         return list.isActive(_num);
     }
 
-    function reachedSoftCap(uint16 _num) external view returns (bool ok) {
-        return list.reachedSoftCap(_num);
+    function hasReachedSoftCap(uint16 _num) external view returns (bool ok) {
+        return list.hasReachedSoftCap(_num);
     }
 
     function totalReceived(uint16 _num) external view returns (uint256 amt) {

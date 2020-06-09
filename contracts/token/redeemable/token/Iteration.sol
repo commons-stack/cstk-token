@@ -3,6 +3,7 @@ pragma solidity ^0.5.17;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 // TODO; set soft cap on iteration
+// TODO: hard cap > soft cap
 
 library Iteration {
     //
@@ -105,6 +106,25 @@ library Iteration {
         );
     }
 
+    /// @dev Set the timestamp when the soft cap for the iteration with the given order number has been reached.
+    /// Soft cap can only be set on an active iteration.
+    /// Soft cap can be reached only once, and the operation is irreversible.
+    /// @param _list (List storage) - Pointer to a List
+    /// @param _num (uint16) - Order number of an iteration
+    /// @param _timestamp (uint256) - Time when the iteration soft cap was reached
+    function setSoftCapReached(
+        List storage _list,
+        uint16 _num,
+        uint256 _timestamp
+    ) internal {
+        require(_list.values[_num].startBlock != 0, "Iteration is not active");
+        require(
+            _list.values[_num].softCapTimestamp == 0,
+            "Soft cap already reached"
+        );
+        _list.values[_num].softCapTimestamp = _timestamp;
+    }
+
     /// @dev Return the order number of the current active iteration, if there is an active iteration.
     /// If there are no active iterations, first return value is false.
     /// @param _list (List storage) - Pointer to a List
@@ -136,24 +156,13 @@ library Iteration {
     /// @param _list (List storage) - Pointer to a List
     /// @param _num (uint8) - Order number of an iteration
     /// @return ok (bool) - True if iteration reached soft cap
-    function reachedSoftCap(List storage _list, uint16 _num)
+    function hasReachedSoftCap(List storage _list, uint16 _num)
         internal
         view
         returns (bool ok)
     {
         return _list.values[_num].softCapTimestamp > 0;
     }
-
-    // /// @dev Check if the current iteration has reached it's soft cap.
-    // /// @param _list (List storage) - Pointer to a List
-    // /// @return ok (bool) - True if iteration reached soft cap
-    // function reachedSoftCap(List storage _list)
-    //     internal
-    //     view
-    //     returns (bool ok)
-    // {
-    //     return reachedSoftCap(_list, _list.cur);
-    // }
 
     /// @dev Get the total DAI received by the iteration with the given order number.
     /// @param _list (List storage) - Pointer to a List
@@ -166,17 +175,6 @@ library Iteration {
     {
         return _list.values[_num].totalReceived;
     }
-
-    // /// @dev Get the total DAI received by the current iteration.
-    // /// @param _list (List storage) - Pointer to a List
-    // /// @return amt (uint256) - Amount of DAI received
-    // function totalReceived(List storage _list)
-    //     internal
-    //     view
-    //     returns (uint256 amt)
-    // {
-    //     return totalReceived(_list, _list.cur);
-    // }
 
     /// @dev Get the multiplication factors of an iteration with a given order number.
     /// @param _list (List storage) - Pointer to a List
@@ -192,15 +190,4 @@ library Iteration {
         denominator = _list.values[_num].denominator;
         return (numerator, denominator);
     }
-
-    // /// @dev Get the multiplication factors of the current iteration.
-    // /// @return numerator (uint256) - Numerator factor
-    // /// @return denominator (uint256) - Denominator factor
-    // function mf(List storage _list)
-    //     internal
-    //     view
-    //     returns (uint256 nominator, uint256 denominator)
-    // {
-    //     return mf(_list, _list.cur);
-    // }
 }

@@ -31,7 +31,8 @@ describe("Testing Iteration Library", function () {
   it("Should cycle through a set of iterations", async function () {
     // Revert if no iterations:
     await expect(iteration.startFirst("100000000")).to.be.revertedWith("No iterations added");
-    // Aad test iterations:
+
+    // Add test iterations:
     await iteration.add("1", "1", "10000", "100000");
     await iteration.add("2", "2", "20000", "200000");
     await iteration.add("3", "3", "30000", "300000");
@@ -57,6 +58,18 @@ describe("Testing Iteration Library", function () {
     await iteration.subDAI("0", "10");
     expect(await iteration.totalReceived("0")).to.eq("10");
 
+    // Revert setting the soft cap if not the active iteration:
+    await expect(iteration.setSoftCapReached("1", "123123")).to.be.revertedWith(
+      "Iteration is not active",
+    );
+
+    // Set the soft cap timestamp:
+    await iteration.setSoftCapReached("0", "123123");
+
+    await expect(iteration.setSoftCapReached("0", "9999999")).to.be.revertedWith(
+      "Soft cap already reached",
+    );
+
     // Go to the next iteration:
     await iteration.next("2000000000");
 
@@ -70,6 +83,9 @@ describe("Testing Iteration Library", function () {
     expect(await iteration.totalReceived("1")).to.eq("30");
     await iteration.subDAI("1", "10");
     expect(await iteration.totalReceived("1")).to.eq("20");
+
+    // Set the soft cap timestamp:
+    await iteration.setSoftCapReached("1", "123123");
 
     // Go to the next iteration:
     await iteration.next("3000000000");
@@ -85,6 +101,9 @@ describe("Testing Iteration Library", function () {
     await iteration.subDAI("2", "10");
     expect(await iteration.totalReceived("2")).to.eq("30");
 
+    // Set the soft cap timestamp:
+    await iteration.setSoftCapReached("2", "123123");
+
     // Go to the next iteration:
     await iteration.next("4000000000");
 
@@ -99,14 +118,13 @@ describe("Testing Iteration Library", function () {
     await iteration.subDAI("3", "10");
     expect(await iteration.totalReceived("3")).to.eq("40");
 
+    // Set the soft cap timestamp:
+    await iteration.setSoftCapReached("3", "123123");
+
     // Should revert if going past the last iteration:
     await expect(iteration.next("500000000")).to.be.revertedWith("No next iteration");
 
     // Final state:
     expect(await iteration.isActive("3")).to.eq(true);
-    // expect(await iteration.totalReceived("0")).to.eq("10");
-    // expect(await iteration.totalReceived("1")).to.eq("20");
-    // expect(await iteration.totalReceived("2")).to.eq("30");
-    // expect(await iteration.totalReceived("3")).to.eq("40");
   });
 });
