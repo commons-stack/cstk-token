@@ -28,10 +28,29 @@ describe("Testing Iteration Library", function () {
     expect(mf.denominator).to.eq(denominator);
   }
 
-  it("Should cycle through a set of iterations", async function () {
-    // Revert if no iterations:
+  it("Should revert if starting with no added iterations", async function () {
     await expect(iteration.startFirst("100000000")).to.be.revertedWith("No iterations added");
+  });
 
+  it("Should revert if adding iteration where numerator is 0", async function () {
+    await expect(iteration.add("0", "1", "1000", "100000")).to.be.revertedWith(
+      "Numerator cannot be 0",
+    );
+  });
+
+  it("Should revert if adding iteration where denominator is 0", async function () {
+    await expect(iteration.add("1", "0", "1000", "100000")).to.be.revertedWith(
+      "Denominator cannot be 0",
+    );
+  });
+
+  it("Should revert if adding iteration where soft cap is greater than hard cap", async function () {
+    await expect(iteration.add("1", "1", "10000000", "10000")).to.be.revertedWith(
+      "Hard cap cannot be less than soft cap",
+    );
+  });
+
+  it("Should cycle through a set of iterations", async function () {
     // Add test iterations:
     await iteration.add("1", "1", "10000", "100000");
     await iteration.add("2", "2", "20000", "200000");
@@ -64,7 +83,9 @@ describe("Testing Iteration Library", function () {
     );
 
     // Set the soft cap timestamp:
+    expect(await iteration.hasReachedSoftCap("0")).to.be.false;
     await iteration.setSoftCapReached("0", "123123");
+    expect(await iteration.hasReachedSoftCap("0")).to.be.true;
 
     await expect(iteration.setSoftCapReached("0", "9999999")).to.be.revertedWith(
       "Soft cap already reached",
@@ -86,6 +107,7 @@ describe("Testing Iteration Library", function () {
 
     // Set the soft cap timestamp:
     await iteration.setSoftCapReached("1", "123123");
+    expect(await iteration.hasReachedSoftCap("1")).to.be.true;
 
     // Go to the next iteration:
     await iteration.next("3000000000");
@@ -103,6 +125,7 @@ describe("Testing Iteration Library", function () {
 
     // Set the soft cap timestamp:
     await iteration.setSoftCapReached("2", "123123");
+    expect(await iteration.hasReachedSoftCap("2")).to.be.true;
 
     // Go to the next iteration:
     await iteration.next("4000000000");
@@ -120,6 +143,7 @@ describe("Testing Iteration Library", function () {
 
     // Set the soft cap timestamp:
     await iteration.setSoftCapReached("3", "123123");
+    expect(await iteration.hasReachedSoftCap("3")).to.be.true;
 
     // Should revert if going past the last iteration:
     await expect(iteration.next("500000000")).to.be.revertedWith("No next iteration");

@@ -2,9 +2,6 @@ pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-// TODO; set soft cap on iteration
-// TODO: hard cap > soft cap
-
 library Iteration {
     //
     // STRUCT DECLARATIONS:
@@ -45,6 +42,10 @@ library Iteration {
         uint256 _softCap,
         uint256 _hardCap
     ) internal {
+        require(_numerator != 0, "Numerator cannot be 0");
+        require(_denominator != 0, "Denominator cannot be 0");
+        require(_hardCap >= _softCap, "Hard cap cannot be less than soft cap");
+
         uint16 id = _list.cnt;
         _list.values[id] = Entry(
             _numerator,
