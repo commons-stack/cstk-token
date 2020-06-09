@@ -60,7 +60,7 @@ library Iteration {
     }
 
     /// @dev Start the fist iteration in the list.
-    /// Set the startBlock of the fist iteration to the current block number.
+    /// Sets the startBlock of the fist iteration to the current block number.
     /// @param _list (List storage) - Pointer to a List
     /// @param _blockNumber (uint256) - Current block number
     function startFirst(List storage _list, uint256 _blockNumber) internal {
