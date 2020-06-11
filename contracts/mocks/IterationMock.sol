@@ -1,11 +1,13 @@
 pragma solidity ^0.5.17;
 
-import "../token/redeemable/token/Iteration.sol";
+import "../token/redeemable/token/IterationList.sol";
 
 contract IterationMock {
-    using Iteration for Iteration.List;
+    using IterationList for IterationList.Data;
 
-    Iteration.List private list;
+    IterationList.Data private list;
+
+    event OperationResult(uint256 result);
 
     function add(
         uint256 _numerator,
@@ -24,16 +26,13 @@ contract IterationMock {
         list.next(_blockNumber);
     }
 
-    function addDAI(uint16 _num, uint256 _amt) external {
-        list.addDAI(_num, _amt);
+    function contribute(uint256 _amt, uint256 _timestamp) external {
+        uint256 diff = list.contribute(_amt, _timestamp);
+        emit OperationResult(diff);
     }
 
-    function subDAI(uint16 _num, uint256 _amt) external {
-        list.subDAI(_num, _amt);
-    }
-
-    function setSoftCapReached(uint16 _num, uint256 _timestamp) external {
-        list.setSoftCapReached(_num, _timestamp);
+    function redeem(uint256 _amt) external {
+        list.redeem(_amt);
     }
 
     function currentIteration() external view returns (bool ok, uint16 num) {
@@ -48,19 +47,19 @@ contract IterationMock {
         return list.isActive(_num);
     }
 
-    function hasReachedSoftCap(uint16 _num) external view returns (bool ok) {
-        return list.hasReachedSoftCap(_num);
+    function softCapTimestamp() external view returns (uint256 timestamp) {
+        return list.softCapTimestamp();
     }
 
-    function totalReceived(uint16 _num) external view returns (uint256 amt) {
-        return list.totalReceived(_num);
+    function totalReceived() external view returns (uint256 amt) {
+        return list.totalReceived();
     }
 
-    function mf(uint16 num)
+    function conversionRatio()
         external
         view
         returns (uint256 numerator, uint256 denominator)
     {
-        return list.mf(num);
+        return list.conversionRatio();
     }
 }
