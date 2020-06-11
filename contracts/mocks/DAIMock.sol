@@ -4,8 +4,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
 
 contract DAIMock is ERC20Detailed, ERC20Mintable {
-    string internal constant NAME = "CSTK Token";
-    string internal constant SYMBOL = "CSTK";
+    string internal constant NAME = "DAI Mock";
+    string internal constant SYMBOL = "DAI";
     uint8 internal constant DECIMALS = 18;
 
     constructor(address[] memory _initialReceivers, uint256 _initialBalance)
