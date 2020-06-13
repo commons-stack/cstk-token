@@ -1,18 +1,20 @@
 import { BuidlerRuntimeEnvironment, DeployFunction } from "@nomiclabs/buidler/types";
 
+import { log } from "../util/log";
+
 const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = bre;
   const { deployer, adminFirst, adminSecond } = await getNamedAccounts();
   const { deploy } = deployments;
 
-  console.log("===================================");
-  console.log("Deploying Registry");
-  console.log("===================================");
+  log(bre, "===================================");
+  log(bre, "Deploying Registry");
+  log(bre, "===================================");
 
   const admins = [adminFirst, adminSecond];
 
-  console.log("\nReferencing Addresses:");
-  console.log(`Admins: ${admins}`);
+  log(bre, "\nReferencing Addresses:");
+  log(bre, `Admins: ${admins}`);
 
   const { address, receipt } = await deploy("Registry", {
     contractName: "Registry",
@@ -20,9 +22,9 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
     args: [admins],
   });
 
-  console.log(`\Registry deployed to ${bre.network.name}\n`);
-  console.log(`Deploy tx: ${receipt.transactionHash}`);
-  console.log(`Address: ${address}\n`);
+  log(bre, `\Registry deployed to ${bre.network.name}\n`);
+  log(bre, `Deploy tx: ${receipt.transactionHash}`);
+  log(bre, `Address: ${address}\n`);
 };
 
 export default func;

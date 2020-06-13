@@ -1,5 +1,7 @@
 import { BuidlerRuntimeEnvironment, DeployFunction } from "@nomiclabs/buidler/types";
 
+import { log } from "../util/log";
+
 const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = bre;
   const {
@@ -16,18 +18,18 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   const daiTokenAddress = daiMock.address;
   const admins = [adminFirst, adminSecond];
 
-  console.log("===================================");
-  console.log("Deploying Token Bank");
-  console.log("===================================");
+  log(bre, "===================================");
+  log(bre, "Deploying Token Bank");
+  log(bre, "===================================");
 
-  console.log("\nReferencing deployed contracts:\n");
-  console.log(`DAI Token at '${daiTokenAddress}'`);
+  log(bre, "\nReferencing deployed contracts:\n");
+  log(bre, `DAI Token at '${daiTokenAddress}'`);
 
-  console.log("\nReferencing addresses:\n");
-  console.log(`Admins: ${admins}`);
-  console.log(`DrainVault Receiver: ${drainVaultReceiver}`);
-  console.log(`EscapeHatch Caller: ${escapeHatchCaller}`);
-  console.log(`EscapeHatch Destination: ${escapeHatchDestination}`);
+  log(bre, "\nReferencing addresses:\n");
+  log(bre, `Admins: ${admins}`);
+  log(bre, `DrainVault Receiver: ${drainVaultReceiver}`);
+  log(bre, `EscapeHatch Caller: ${escapeHatchCaller}`);
+  log(bre, `EscapeHatch Destination: ${escapeHatchDestination}`);
 
   const { address, receipt } = await deployments.deploy("TokenBank", {
     contractName: "TokenBank",
@@ -35,9 +37,9 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
     args: [daiTokenAddress, admins, drainVaultReceiver, escapeHatchCaller, escapeHatchDestination],
   });
 
-  console.log(`\nRSCTK Token deployed to ${bre.network.name}\n`);
-  console.log(`Deploy tx: ${receipt.transactionHash}`);
-  console.log(`Address: ${address}\n`);
+  log(bre, `\nRSCTK Token deployed to ${bre.network.name}\n`);
+  log(bre, `Deploy tx: ${receipt.transactionHash}`);
+  log(bre, `Address: ${address}\n`);
 };
 
 export default func;

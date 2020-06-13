@@ -1,5 +1,7 @@
 import { BuidlerRuntimeEnvironment, DeployFunction } from "@nomiclabs/buidler/types";
 
+import { log } from "../util/log";
+
 const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = bre;
   const { deploy } = deployments;
@@ -42,21 +44,21 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   const registryAddress = registry.address;
   const admins = [adminFirst, adminSecond, adminThird, adminFourth];
 
-  console.log("================================");
-  console.log("Deploying RCSTK Token");
-  console.log("================================");
+  log(bre, "================================");
+  log(bre, "Deploying RCSTK Token");
+  log(bre, "================================");
 
-  console.log("\nReferencing deployed contracts:\n");
-  console.log(`TokenBank at '${tokenBankAddress}'`);
-  console.log(`CSTK Token at '${cstkTokenAddress}`);
-  console.log(`CSTK Token Manager at '${cstkTokenManagerAddress}'`);
-  console.log(`Registry at: '${registryAddress}`);
+  log(bre, "\nReferencing deployed contracts:\n");
+  log(bre, `TokenBank at '${tokenBankAddress}'`);
+  log(bre, `CSTK Token at '${cstkTokenAddress}`);
+  log(bre, `CSTK Token Manager at '${cstkTokenManagerAddress}'`);
+  log(bre, `Registry at: '${registryAddress}`);
 
-  console.log("\nReferencing addresses\n");
-  console.log(`Admins: ${admins}`);
-  console.log(`EscapeHatch Caller: ${escapeHatchCaller}`);
-  console.log(`EscapeHatch Destination: ${escapeHatchDestination}`);
-  console.log(`DrainVault Receiver: ${drainVaultReceiver}`);
+  log(bre, "\nReferencing addresses\n");
+  log(bre, `Admins: ${admins}`);
+  log(bre, `EscapeHatch Caller: ${escapeHatchCaller}`);
+  log(bre, `EscapeHatch Destination: ${escapeHatchDestination}`);
+  log(bre, `DrainVault Receiver: ${drainVaultReceiver}`);
 
   const { address, receipt } = await deploy("RCSTKToken", {
     contractName: "RCSTKToken",
@@ -76,9 +78,9 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
     ],
   });
 
-  console.log(`\nRSCTK Token deployed to ${bre.network.name}\n`);
-  console.log(`Deploy tx: ${receipt.transactionHash}`);
-  console.log(`Address: ${address}\n`);
+  log(bre, `\nRSCTK Token deployed to ${bre.network.name}\n`);
+  log(bre, `Deploy tx: ${receipt.transactionHash}`);
+  log(bre, `Address: ${address}\n`);
 };
 
 export default func;
