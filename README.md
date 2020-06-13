@@ -55,18 +55,34 @@ To clean up build artefacts, typechain generated code and coverage reports, run:
 
 `npm run clean`
 
-## Deploying contracts and publishing:
+## Deploying contracts:
 
-Contract deployment is handled by the `deploy.ts` script. The script relies on running the `deploy:contract` task to perform the actual contract deployment, while the script code handles initialization and wiring the deployed contracts.
+To deploy the contracts to the Ropsten testnet, run:
 
-To ensure proper publishing, all contracts with a **public** interface should be added to the deployment file - write their _exact_ names to the `contracts` parameter of the `writeDeploymentFile`.
+`npm run deploy:ropsten`
 
-To run the deployment, run::
+The deployment will mint 1MM Mock DAI tokens and distribute them to a set number of ordered accounts generated from the mnemonic.
 
-`npm run deploy`
+## Admin functions:
 
-Deployed contracts can be **published** - this will generate JS code for acessing the ABI, bytecode for each contract as well as the address on the network it was deployed.
+All admin functions assume the contracts are deployed on Ropsten.
 
-To publish, run:
+To read all contributors from the trust registry, run:
 
-`npm run publish`
+`npm run admin:trusted-accounts`
+
+To add a trusted account to the list and set the max trust, run:
+
+`npm run admin:add-trusted <ADDRESS> <AMOUNT_TOKENS>`
+
+To remove an existing account from the list, run:
+
+`npm run admin:remove-trusted <ADDRESS>`
+
+To mint mock DAI tokens to an address, run:
+
+`npm run admin:mint-dai <ADDRESS> <AMOUNT>`
+
+To mint CTSK tokens to an address, run:
+
+`npm run admin:mint-cstk <ADDRESS> <AMOUNT>`

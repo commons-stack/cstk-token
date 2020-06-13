@@ -11,6 +11,12 @@ usePlugin("buidler-deploy");
 usePlugin("buidler-gas-reporter");
 usePlugin("solidity-coverage");
 
+require("./scripts/trustedAccounts");
+require("./scripts/addTrusted");
+require("./scripts/removeTrusted");
+require("./scripts/mintCSTK");
+require("./scripts/mintDAI");
+
 const MNEMONIC = process.env.MNEMONIC || "";
 const DEVCHAIN_ACCOUNT_NUM = Number(process.env.DEVCHAIN_ACCOUNT_NUM || "20");
 const DEVCHAIN_BALANCE_ETH = Number(process.env.DEVCHAIN_BALANCE_ETH || "1000");

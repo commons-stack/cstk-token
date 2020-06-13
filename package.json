@@ -19,7 +19,12 @@
     "test:gasreport": "GAS_REPORTER_ENABLED=true npx buidler test --network localhost",
     "coverage": "npx buidler coverage --network coverage --temp .coverage-temp",
     "lint-test": "npx eslint test --ext .ts,.tsx",
-    "lint-test:fix": "npx eslint test --ext .ts,.tsx --fix"
+    "lint-test:fix": "npx eslint test --ext .ts,.tsx --fix",
+    "admin:trusted-accounts": "npx buidler --network ropsten trusted-accounts",
+    "admin:add-trusted": "npx buidler --network ropsten add-trusted",
+    "admin:remove-trusted": "npx buidler --network ropsten remove-trusted",
+    "admin:mint-dai": "npx builder --network ropsten mint-dai",
+    "admin:mint-cstk": "npx buidler --network ropsten mint-cstk"
   },
   "repository": {
     "type": "git",
