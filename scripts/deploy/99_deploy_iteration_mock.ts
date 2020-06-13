@@ -7,7 +7,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = bre;
   const { deploy } = deployments;
 
-  const { deployer, adminFirst } = await getNamedAccounts();
+  const { deployer } = await getNamedAccounts();
 
   await deploy("IterationMock", {
     contractName: "IterationMock",

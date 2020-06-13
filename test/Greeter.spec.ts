@@ -14,7 +14,7 @@ describe("Testing Greeter contract:", function () {
   beforeEach(async function () {
     await deployments.fixture();
     deployment = await deployments.get("Greeter");
-    greeter = (await ethers.getContractAt("Greeter", deployment.address || "")) as Greeter;
+    greeter = (await ethers.getContractAt("Greeter", deployment.address)) as Greeter;
   });
 
   it("Should deploy the contract", async function () {
