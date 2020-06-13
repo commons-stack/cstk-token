@@ -6,6 +6,7 @@ import { remove } from "fs-extra";
 require("dotenv-safe").config();
 
 usePlugin("@nomiclabs/buidler-ethers");
+usePlugin("@nomiclabs/buidler-waffle");
 usePlugin("@nomiclabs/buidler-etherscan");
 usePlugin("buidler-deploy");
 usePlugin("buidler-gas-reporter");
