@@ -156,6 +156,18 @@ library IterationList {
         return _data.values[_data.cur].softCapTimestamp;
     }
 
+    /// @dev Check if the current iteration has reached hard cap.
+    /// @param _data (Data storage) - Pointer to list Data
+    /// @return ok (bool) - True if hard cap reached
+    function hasReachedHardCap(Data storage _data)
+        internal
+        view
+        returns (bool ok)
+    {
+        Iteration storage cur = _data.values[_data.cur];
+        return cur.totalReceived >= cur.hardCap;
+    }
+
     /// @dev Get the total received amount of the current iteration.
     /// @param _data (Data storage) - Pointer to list Data
     /// @return amt (uint256) - Amount of DAI received

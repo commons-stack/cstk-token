@@ -47,6 +47,10 @@ contract IterationMock {
         return list.isActive(_num);
     }
 
+    function hasReachedHardCap() external view returns (bool ok) {
+        return list.hasReachedHardCap();
+    }
+
     function softCapTimestamp() external view returns (uint256 timestamp) {
         return list.softCapTimestamp();
     }

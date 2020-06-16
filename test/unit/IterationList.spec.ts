@@ -121,6 +121,12 @@ describe("Testing Iteration Library", function () {
       await iteration.contribute("100001", TIMESTAMP);
       await expect(iteration.contribute("100", TIMESTAMP)).to.be.revertedWith("Hard cap reached");
     });
+
+    it("Should return correct value for hasReachedHardCap", async function () {
+      expect(await iteration.hasReachedHardCap()).to.be.false;
+      await iteration.contribute("100001", TIMESTAMP);
+      expect(await iteration.hasReachedHardCap()).to.be.true;
+    });
   });
 
   it("Should cycle through iterations", async function () {

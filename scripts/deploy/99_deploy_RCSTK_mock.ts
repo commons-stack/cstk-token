@@ -3,6 +3,9 @@ import { BuidlerRuntimeEnvironment, DeployFunction } from "@nomiclabs/buidler/ty
 import { log } from "../util/log";
 
 const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
+  if (bre.network.name === "mainnet" || bre.network.name === "ropsten") {
+    return;
+  }
   const { deployments, getNamedAccounts } = bre;
   const { deploy } = deployments;
 
@@ -34,6 +37,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   // Iteration 5: CSTK rate = 1 CSTK/DAI, Soft Cap =  2950000 DAI, Hard Cap =  3750000 DAI
   // _newIteration(1, 1, 2950000, 3750000);
 
+  const cnt = 5;
   const numerators = [5, 2, 3, 5, 1];
   const denominators = [2, 1, 2, 4, 1];
   const softCaps = [984000, 796000, 1170000, 820000, 2950000];
@@ -60,10 +64,11 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   log(bre, `EscapeHatch Destination: ${escapeHatchDestination}`);
   log(bre, `DrainVault Receiver: ${drainVaultReceiver}`);
 
-  const { address, receipt } = await deploy("RCSTKToken", {
-    contractName: "RCSTKToken",
+  const { address, receipt } = await deploy("RCSTKMock", {
+    contractName: "RCSTKMock",
     from: deployer,
     args: [
+      cnt,
       numerators,
       denominators,
       softCaps,
