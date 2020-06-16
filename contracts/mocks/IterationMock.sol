@@ -62,4 +62,17 @@ contract IterationMock {
     {
         return list.conversionRatio();
     }
+
+    function enumerate()
+        external
+        view
+        returns (
+            uint256[] memory numerators,
+            uint256[] memory denominators,
+            uint256[] memory softCaps,
+            uint256[] memory hardCaps
+        )
+    {
+        return list.enumerate();
+    }
 }

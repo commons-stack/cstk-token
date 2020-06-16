@@ -2,9 +2,6 @@ pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-// TODO: hard cap timestamp?
-// TODO: use timestamps or block numbers?
-
 library IterationList {
     using SafeMath for uint256;
 
@@ -181,5 +178,36 @@ library IterationList {
     {
         Iteration storage cur = _data.values[_data.cur];
         return (cur.numerator, cur.denominator);
+    }
+
+    /// @dev Returns all numerator, denominators, soft and hard cap values.
+    /// @param _data (Data storage) - Pointer to list Data
+    /// @return numerators (uint256[] memory) - Numerator factors
+    /// @return denominators (uint256[] memory) - Denominator factors
+    /// @return softCaps (uint256[] memory) - Soft cap values
+    /// @return hardCaps (uint256[] memory) - Hard cap values
+    function enumerate(Data storage _data)
+        internal
+        view
+        returns (
+            uint256[] memory numerators,
+            uint256[] memory denominators,
+            uint256[] memory softCaps,
+            uint256[] memory hardCaps
+        )
+    {
+        numerators = new uint256[](_data.cnt);
+        denominators = new uint256[](_data.cnt);
+        softCaps = new uint256[](_data.cnt);
+        hardCaps = new uint256[](_data.cnt);
+
+        for (uint16 i = 0; i < _data.cnt; ++i) {
+            numerators[i] = _data.values[i].numerator;
+            denominators[i] = _data.values[i].denominator;
+            softCaps[i] = _data.values[i].softCap;
+            hardCaps[i] = _data.values[i].hardCap;
+        }
+
+        return (numerators, denominators, softCaps, hardCaps);
     }
 }

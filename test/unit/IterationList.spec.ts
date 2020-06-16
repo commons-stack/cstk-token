@@ -1,6 +1,7 @@
 import { deployments, ethers } from "@nomiclabs/buidler";
 import { expect, use } from "chai";
 
+import { BigNumber } from "ethers/utils";
 import { IterationMock } from "../../build/types/IterationMock";
 import { solidity } from "ethereum-waffle";
 
@@ -29,6 +30,19 @@ describe("Testing Iteration Library", function () {
     const cR = await iteration.conversionRatio();
     expect(cR.numerator).to.eq(numerator);
     expect(cR.denominator).to.eq(denominator);
+  }
+
+  async function expectIterations(
+    numerators: string[],
+    denominators: string[],
+    softCaps: string[],
+    hardCaps: string[],
+  ): Promise<void> {
+    const its = await iteration.enumerate();
+    expect(its.numerators).to.deep.eq(numerators.map((e) => new BigNumber(e)));
+    expect(its.denominators).to.deep.eq(denominators.map((e) => new BigNumber(e)));
+    expect(its.softCaps).to.deep.eq(softCaps.map((e) => new BigNumber(e)));
+    expect(its.hardCaps).to.deep.eq(hardCaps.map((e) => new BigNumber(e)));
   }
 
   it("Should revert if starting with no added iterations", async function () {
@@ -114,7 +128,14 @@ describe("Testing Iteration Library", function () {
     await iteration.add("1", "10", "10000", "100000");
     await iteration.add("2", "20", "20000", "200000");
     await iteration.add("3", "30", "30000", "300000");
-    await iteration.add("4", "40", "50000", "400000");
+    await iteration.add("4", "40", "40000", "400000");
+
+    await expectIterations(
+      ["1", "2", "3", "4"],
+      ["10", "20", "30", "40"],
+      ["10000", "20000", "30000", "40000"],
+      ["100000", "200000", "300000", "400000"],
+    );
 
     // At start: count = 4, no current active:
     expect(await iteration.cnt()).to.eq(4);
