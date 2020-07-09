@@ -109,7 +109,7 @@ contract Registry is AdminRole {
     /// @notice Return the max trust of an address, or 0 if the address is not a contributor.
     /// @param _adr (address) Address to check
     /// @return allowed (uint256) Max trust of the address, or 0 if not a contributor.
-    function getMaxTrust(address _adr)
+    function getMaxTrustPercentage(address _adr)
         external
         view
         returns (uint256 maxTrust)

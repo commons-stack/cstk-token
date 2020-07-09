@@ -129,14 +129,14 @@ contract RCSTKToken is
     uint256 public endRaiseTimestamp;
 
     event FinishRaise();
-    event MaximumTrustReached(address wallet);
+    event MaximumTrustPercentageReached(address wallet);
     event SoftCapReached(uint256 iteration);
     event HardCapReached(uint256 iteration);
 
     /// @dev only contributors whitelisted in the Registry will be allowed to use functions modified by this
     modifier onlyContributor(address wallet) {
         require(
-            registry.getMaxTrust(wallet) != 0,
+            registry.getMaxTrustPercentage(wallet) != 0,
             "Only contributors can call this"
         );
         _;
@@ -289,11 +289,11 @@ contract RCSTKToken is
                     cstkToken.balanceOf(msg.sender)
                 ),
                 amountTokens
-            ) >= registry.getMaxTrust(msg.sender)
+            ) >= SafeMath.mul(SafeMath.div(registry.getMaxTrustPercentage(msg.sender), 100), totalSupply()) 
         ) {
             /// @dev If this donation would give them more CSTK tokens then they are trusted to hold, we calculate how many tokens they can be trusted to hold and reduce their donation, they can donate the extra DAI directly to the Commons Stack Donation Address
             amountTokens = SafeMath.sub(
-                registry.getMaxTrust(msg.sender),
+                SafeMath.mul(SafeMath.div(registry.getMaxTrustPercentage(msg.sender), 100), totalSupply()),
                 SafeMath.add(
                     balanceOf(msg.sender),
                     cstkToken.balanceOf(msg.sender)
@@ -308,7 +308,7 @@ contract RCSTKToken is
                 _iterations[currentIterationNumber].numerator
             );
 
-            emit MaximumTrustReached(msg.sender);
+            emit MaximumTrustPercentageReached(msg.sender);
         }
 
         if (
