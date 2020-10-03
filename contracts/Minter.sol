@@ -1,5 +1,6 @@
 pragma solidity ^0.5.0;
 
+import "./deps/IMintable.sol";
 import "./registry/Registry.sol";
 import "./registry/AdminRole.sol";
 
@@ -20,6 +21,7 @@ contract Minter {
 
     Registry internal registry;
     IERC20 internal cstkToken;
+    IMintable internal dao;
 
     address public authorizedKey;
 
@@ -28,11 +30,13 @@ contract Minter {
 
     constructor(
         address _authorizedKey,
+        address _daoAddress,
         address _registryAddress,
         address _cstkTokenAddress
     ) public {
         require(_authorizedKey != address(0), "Authorized key cannot be empty");
 
+        dao = IMintable(_daoAddress);
         registry = Registry(_registryAddress);
         cstkToken = IERC20(_cstkTokenAddress);
 
@@ -70,8 +74,7 @@ contract Minter {
             "not allowed"
         );
 
-        // TODO: call mint function in DAO
-        // DAOaddress.mint(amountOfCSTK,sender,cstkToken)??
+        dao.mint(sender, amountCSTK);
 
         emit Donate(sender, token, receiverId, amount, amountCSTK, homeTx);
     }
