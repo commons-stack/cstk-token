@@ -19,6 +19,8 @@ contract Minter {
         bytes32 homeTx
     );
 
+    uint256 private constant MAX_TRUST_DENOMINATOR = 10000000;
+
     Registry internal registry;
     IERC20 internal cstkToken;
     IMintable internal dao;
@@ -63,19 +65,37 @@ contract Minter {
         uint256 amount,
         bytes32 homeTx
     ) external onlyAuthorizedKey {
-        uint256 amountCSTK = amount.mul(numerator).div(denominator);
+        require(denominator != 0, "denominator cannot be 0");
+
+        // Determine the maximum supply of the CSTK token.
         uint256 totalSupply = cstkToken.totalSupply();
 
+        // Get the max trust amount for the sender acc from the Registry.
         uint256 maxTrust = registry.getMaxTrust(sender);
+
+        // Get the current CSTK balance of the sender account.
         uint256 senderBalance = cstkToken.balanceOf(sender);
-        require(
-            maxTrust.mul(totalSupply).div(10000000) >=
-                senderBalance + amountCSTK,
-            "not allowed"
+
+        // Get the amount to mint based on the numerator/denominator.
+        uint256 toMint = amount.mul(numerator).div(denominator);
+
+        // The sender cannot receive more than the following amount of tokens:
+        // maxR := maxTrust[sender] * TOTAL_SUPPLY / 10000000.
+        uint256 maxToReceive = maxTrust.mul(totalSupply).div(
+            MAX_TRUST_DENOMINATOR
         );
 
-        dao.mint(sender, amountCSTK);
+        // If the sender is to receive more than this amount of tokens, reduce
+        // mint the difference.
+        if (maxToReceive <= senderBalance.add(toMint)) {
+            toMint = maxToReceive.sub(senderBalance);
+        }
 
-        emit Donate(sender, token, receiverId, amount, amountCSTK, homeTx);
+        // If there is anything to mint, mint it to the sender.
+        if (toMint > 0) {
+            dao.mint(sender, toMint);
+        }
+
+        emit Donate(sender, token, receiverId, amount, toMint, homeTx);
     }
 }
