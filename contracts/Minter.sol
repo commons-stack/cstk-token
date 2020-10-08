@@ -60,7 +60,6 @@ contract Minter is AdminRole {
 
     function mint(address recipient, uint256 toMint) external onlyAdmin {
         _mint(recipient, toMint);
-        emit Mint(recipient,toMint);
     }
 
     function _mint(address recipient, uint256 toMint) internal {
@@ -88,6 +87,7 @@ contract Minter is AdminRole {
         // If there is anything to mint, mint it to the recipient.
         if (toMint > 0) {
             dao.mint(recipient, toMint);
+            emit Mint(recipient,toMint);
         }
     }
 
