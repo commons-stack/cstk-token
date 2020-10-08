@@ -20,7 +20,7 @@ contract Minter is AdminRole {
     );
 
     event Mint(
-        address indexed recepient,
+        address indexed recipient,
         uint256 amount
     );
 
@@ -58,36 +58,36 @@ contract Minter is AdminRole {
         denominator = _denominator;
     }
 
-    function mint(address recepient, uint256 toMint) external onlyAdmin {
-        _mint(recepient, toMint);
-        emit Mint(recepient,toMint);
+    function mint(address recipient, uint256 toMint) external onlyAdmin {
+        _mint(recipient, toMint);
+        emit Mint(recipient,toMint);
     }
 
-    function _mint(address recepient, uint256 toMint) internal {
+    function _mint(address recipient, uint256 toMint) internal {
         // Determine the maximum supply of the CSTK token.
         uint256 totalSupply = cstkToken.totalSupply();
 
-        // Get the max trust amount for the recepient acc from the Registry.
-        uint256 maxTrust = registry.getMaxTrust(recepient);
+        // Get the max trust amount for the recipient acc from the Registry.
+        uint256 maxTrust = registry.getMaxTrust(recipient);
 
-        // Get the current CSTK balance of the recepient account.
-        uint256 recepientBalance = cstkToken.balanceOf(recepient);
+        // Get the current CSTK balance of the recipient account.
+        uint256 recipientBalance = cstkToken.balanceOf(recipient);
 
-        // The recepient cannot receive more than the following amount of tokens:
-        // maxR := maxTrust[recepient] * TOTAL_SUPPLY / 10000000.
+        // The recipient cannot receive more than the following amount of tokens:
+        // maxR := maxTrust[recipient] * TOTAL_SUPPLY / 10000000.
         uint256 maxToReceive = maxTrust.mul(totalSupply).div(
             MAX_TRUST_DENOMINATOR
         );
 
-        // If the recepient is to receive more than this amount of tokens, reduce
+        // If the recipient is to receive more than this amount of tokens, reduce
         // mint the difference.
-        if (maxToReceive <= recepientBalance.add(toMint)) {
-            toMint = maxToReceive.sub(recepientBalance);
+        if (maxToReceive <= recipientBalance.add(toMint)) {
+            toMint = maxToReceive.sub(recipientBalance);
         }
 
-        // If there is anything to mint, mint it to the recepient.
+        // If there is anything to mint, mint it to the recipient.
         if (toMint > 0) {
-            dao.mint(recepient, toMint);
+            dao.mint(recipient, toMint);
         }
     }
 
