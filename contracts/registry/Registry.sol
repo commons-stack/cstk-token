@@ -3,11 +3,13 @@ pragma solidity ^0.5.17;
 import "./AdminRole.sol";
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/GSN/Context.sol";
 
 /// @title Registry tracks trusted contributors: accounts and their max trust.
 // Max trust will determine the maximum amount of tokens the account can obtain.
 /// @author Nelson Melina
-contract Registry is AdminRole {
+contract Registry is Context, AdminRole {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     //
@@ -17,8 +19,17 @@ contract Registry is AdminRole {
     // EnumerableSet of all trusted accounts:
     EnumerableSet.AddressSet internal accounts;
 
+    // CS token contract
+    IERC20 internal cstkToken;
+
+    // Minter contract address
+    address private minterContract;
+
     // Mapping of account => contributor max trust:
     mapping(address => uint256) maxTrusts;
+
+    // Mapping of account => contributor pending balance:
+    mapping(address => uint256) pendingBalances;
 
     //
     // EVENTS:
@@ -36,7 +47,21 @@ contract Registry is AdminRole {
 
     /// @dev Construct the Registry,
     /// @param _admins (address[]) List of admins for the Registry contract.
-    constructor(address[] memory _admins) public AdminRole(_admins) {}
+    /// @param _cstkTokenAddress (address) CS token deployed contract address
+    constructor(address[] memory _admins, address _cstkTokenAddress)
+        public
+        AdminRole(_admins)
+    {
+        cstkToken = IERC20(_cstkTokenAddress);
+    }
+
+    modifier onlyMinter() {
+        require(
+            _msgSender() == minterContract,
+            "Caller is not Minter Contract"
+        );
+        _;
+    }
 
     //
     // EXTERNAL FUNCTIONS:
@@ -117,6 +142,52 @@ contract Registry is AdminRole {
         return maxTrusts[_adr];
     }
 
+    /// @notice Return the pending balance of an address, or 0 if the address is not a contributor.
+    /// @param _adr (address) Address to check
+    /// @return pendingBalance (uint256) Pending balance of the address, or 0 if not a contributor.
+    function getPendingBalance(address _adr)
+        external
+        view
+        returns (uint256 pendingBalance)
+    {
+        return pendingBalances[_adr];
+    }
+
+    // @notice Set minter contract address
+    // @param _minterContract (address) Address to set
+    function setMinterContract(address _minterContract) external onlyAdmin {
+        minterContract = _minterContract;
+    }
+
+    // @notice Set pending balance of an address
+    // @param _adr (address) Address to set
+    // @param _pendingBalance (uint256) Pending balance of the address
+    function setPendingBalance(address _adr, uint256 _pendingBalance)
+        external
+        onlyAdmin
+    {
+        require(
+            _adr != address(0),
+            "Cannot set pending balance for zero balance"
+        );
+        require(maxTrusts[_adr] != 0, "Address is not a contributor");
+        require(
+            cstkToken.balanceOf(_adr) == 0,
+            "User has activated his membership"
+        );
+
+        pendingBalances[_adr] = _pendingBalance;
+    }
+
+    function clearPendingBalance(address _adr) external onlyMinter {
+        require(
+            _adr != address(0),
+            "Cannot set pending balance for zero balance"
+        );
+
+        delete pendingBalances[_adr];
+    }
+
     //
     // INTERNAL FUNCTIONS:
     //
@@ -140,6 +211,7 @@ contract Registry is AdminRole {
 
         EnumerableSet.remove(accounts, _adr);
         delete maxTrusts[_adr];
+        delete pendingBalances[_adr];
 
         emit ContributorRemoved(_adr);
     }
