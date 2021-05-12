@@ -23,7 +23,7 @@ contract Registry is Context, AdminRole {
     IERC20 internal cstkToken;
 
     // Minter contract address
-    address private minterContract;
+    address public minterContract;
 
     // Mapping of account => contributor max trust:
     mapping(address => uint256) maxTrusts;
