@@ -72,7 +72,8 @@ contract Minter is AdminRole {
 
         // It's activating membership too
         if (recipientBalance == 0) {
-            toMint = toMint + registry.consumePendingBalance(recipient);
+            toMint = toMint + registry.getPendingBalance(recipient);
+            registry.clearPendingBalance(recipient);
         }
 
         // The recipient cannot receive more than the following amount of tokens:

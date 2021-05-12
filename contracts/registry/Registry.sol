@@ -41,6 +41,18 @@ contract Registry is Context, AdminRole {
     /// @dev Emit when a contributor has been removed:
     event ContributorRemoved(address adr);
 
+    /// @dev Emit when a contributor's pending balance is changed:
+    event PendingBalanceChanged(address indexed adr, uint256 pendingBalance);
+
+    /// @dev Emit when a contributor's pending balance is cleared:
+    event PendingBalanceCleared(
+        address indexed adr,
+        uint256 consumedPendingBalance
+    );
+
+    /// @dev Emit when minter contract address is set
+    event MinterContractSet(address indexed adr);
+
     //
     // CONSTRUCTOR:
     //
@@ -150,13 +162,15 @@ contract Registry is Context, AdminRole {
         view
         returns (uint256 pendingBalance)
     {
-        return pendingBalances[_adr];
+        pendingBalance = pendingBalances[_adr];
     }
 
     // @notice Set minter contract address
     // @param _minterContract (address) Address to set
     function setMinterContract(address _minterContract) external onlyAdmin {
         minterContract = _minterContract;
+
+        emit MinterContractSet(_minterContract);
     }
 
     // @notice Set pending balance of an address
@@ -177,22 +191,23 @@ contract Registry is Context, AdminRole {
         );
 
         pendingBalances[_adr] = _pendingBalance;
+
+        emit PendingBalanceChanged(_adr, _pendingBalance);
     }
 
-    function consumePendingBalance(address _adr)
+    function clearPendingBalance(address _adr)
         external
         onlyMinter
-        returns (uint256 memory pendingBalance)
     {
         require(
             _adr != address(0),
             "Cannot consume pending balance for zero balance"
         );
 
-        pendingBalance = pendingBalance[_addr];
+        uint256 pendingBalance = pendingBalances[_adr];
         delete pendingBalances[_adr];
 
-        return pendingBalance;
+        emit PendingBalanceCleared(_adr, pendingBalance);
     }
 
     //

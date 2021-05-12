@@ -63,7 +63,8 @@ const config: HardhatUserConfig = {
     drainVaultReceiver: { default: 0 },
     escapeHatchCaller: { default: 0 },
     escapeHatchDestination: { default: 0 },
-    other: { default: 9 },
+    other: { default: 8 },
+    otherSecond: { default: 9 },
   },
   solidity: {
     version: SOLC_VERSION,

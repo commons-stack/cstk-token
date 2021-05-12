@@ -15,14 +15,17 @@ describe("Test Registry", function () {
   let admins: string[];
   let contributors: string[];
   let other: string;
+  let otherSecond: string;
 
   let registry: Contract;
+  let cstkToken: Contract;
 
   beforeEach(async function () {
     await deployments.fixture();
 
     const accounts = await getNamedAccounts();
     other = accounts.other;
+    otherSecond = accounts.otherSecond;
     admins = [accounts.adminFirst, accounts.adminSecond];
 
     contributors = [
@@ -32,8 +35,11 @@ describe("Test Registry", function () {
       accounts.adminFourth,
     ];
 
-    const deployment = await deployments.get("Registry");
-    registry = await ethers.getContractAt("Registry", deployment.address); // as Registry;
+    const registryDeployment = await deployments.get("Registry");
+    registry = await ethers.getContractAt("Registry", registryDeployment.address); // as Registry;
+
+    const cstkTokenDeployment = await deployments.get("CSTKTokenManagerMock");
+    cstkToken = await ethers.getContractAt("CSTKTokenManagerMock", cstkTokenDeployment.address); // as Registry;
   });
 
   it("Should set the correct admins", async function () {
@@ -151,5 +157,100 @@ describe("Test Registry", function () {
       expect(got.contributors).to.deep.eq(contributors);
       expect(got.trusts.map((t) => t.toString())).to.deep.eq(trusts.map((t) => t.toString()));
     });
+  });
+
+  describe("When setting pendingBalance of a contributor", async function () {
+    it("Should return zero for initial contributor", async function () {
+      await registry.registerContributor(other, eth("1"));
+      expect(await registry.getPendingBalance(other)).to.eq("0");
+    });
+
+    it("Should revert if is not called by an Admin role", async function () {
+      await registry.registerContributor(other, eth("1"));
+      const otherSecondSigner = ethers.provider.getSigner(otherSecond);
+      await expect(
+        registry.connect(otherSecondSigner).setPendingBalance(other, eth("1")),
+      ).to.be.revertedWith("AdminRole: caller does not have the Admin role");
+    });
+
+    it("Should change a valid pending balance", async function () {
+      await registry.registerContributor(other, eth("1"));
+      await expect(registry.setPendingBalance(other, eth("3")), "Pending balance is not set")
+        .to.emit(registry, "PendingBalanceChanged")
+        .withArgs(other, eth("3"));
+      expect(await registry.getPendingBalance(other)).to.eq(eth("3"));
+    });
+
+    it("Should revert if address is zero", async function () {
+      await expect(registry.setPendingBalance(AddressZero, eth("1"))).to.be.revertedWith(
+        "Cannot set pending balance for zero balance",
+      );
+    });
+
+    it("Should revert if address is not a contributor", async function () {
+      await expect(registry.setPendingBalance(other, eth("1"))).to.be.revertedWith(
+        "Address is not a contributor",
+      );
+    });
+
+    it("Should revert if cstk balance is not zero", async function () {
+      await registry.registerContributor(other, eth("1"));
+      await cstkToken.mint(other, eth("2"));
+      await expect(registry.setPendingBalance(other, eth("1"))).to.be.revertedWith(
+        "User has activated his membership",
+      );
+    });
+
+    it("Should set minter contract address", async function () {
+      const minterAccount = otherSecond;
+
+      // Set minterAccount
+      await expect(registry.setMinterContract(minterAccount))
+        .to.emit(registry, "MinterContractSet")
+        .withArgs(minterAccount);
+
+      const otherSigner = ethers.provider.getSigner(other);
+      await expect(registry.connect(otherSigner).setMinterContract(other)).to.be.revertedWith(
+        "AdminRole: caller does not have the Admin role",
+      );
+    });
+
+    it("Should clear an account pending balance", async function () {
+      await registry.registerContributor(other, eth("1"));
+      await registry.setPendingBalance(other, eth("2"));
+      expect(await registry.getPendingBalance(other)).to.eq(eth("2"));
+
+      const minter = otherSecond;
+
+      // Set minterAccount
+      await registry.setMinterContract(minter);
+
+      const minterSigner = ethers.provider.getSigner(minter);
+      await expect(
+        registry.connect(minterSigner).clearPendingBalance(other),
+        "clearPendingBalance by minter",
+      )
+        .to.emit(registry, "PendingBalanceCleared")
+        .withArgs(other, eth("2"));
+      expect(await registry.getPendingBalance(other)).to.eq(eth("0"));
+    });
+  });
+
+  it("Should revert if caller is not minter", async function () {
+    await registry.registerContributor(other, eth("1"));
+    await registry.setPendingBalance(other, eth("2"));
+    expect(await registry.getPendingBalance(other)).to.eq(eth("2"));
+
+    // Clear by one of admins
+    await expect(registry.clearPendingBalance(other)).to.revertedWith(
+      "Caller is not Minter Contract",
+    );
+    expect(await registry.getPendingBalance(other)).to.eq(eth("2"));
+
+    const otherSecondSigner = ethers.provider.getSigner(otherSecond);
+    await expect(registry.connect(otherSecondSigner).clearPendingBalance(other)).to.revertedWith(
+      "Caller is not Minter Contract",
+    );
+    expect(await registry.getPendingBalance(other)).to.eq(eth("2"));
   });
 });
