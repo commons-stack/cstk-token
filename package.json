@@ -48,7 +48,7 @@
     "@types/chai": "^4.2.18",
     "@types/fs-extra": "^8.1.1",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^13.13.51",
+    "@types/node": "^13.13.52",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
     "chai": "^4.3.4",
@@ -73,6 +73,6 @@
     "typechain-target-ethers": "^1.0.3",
     "typechain-target-truffle": "^1.0.2",
     "typechain-target-web3-v1": "^1.0.4",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.9"
   }
 }

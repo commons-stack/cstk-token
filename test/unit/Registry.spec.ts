@@ -1,5 +1,7 @@
 import { deployments, ethers, getNamedAccounts } from "hardhat";
 import { expect, use } from "chai";
+import "hardhat-deploy";
+import "@nomiclabs/hardhat-ethers";
 
 import { constants } from "ethers";
 // import { Registry } from "../../build/types/Registry";

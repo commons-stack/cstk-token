@@ -1,5 +1,6 @@
 import { task, types } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
+import "hardhat-deploy";
 
 // import { Registry } from "../build/types/Registry";
 

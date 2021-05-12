@@ -2,6 +2,9 @@ import { ContractTransaction, utils } from "ethers";
 import { deployments, ethers, getNamedAccounts } from "hardhat";
 import { expect, use } from "chai";
 
+import "hardhat-deploy";
+import "@nomiclabs/hardhat-ethers";
+
 import { constants } from "ethers";
 // import { DAIMock } from "../../build/types/DAIMock";
 // import { TokenBank } from "../../build/types/TokenBank";
