@@ -70,6 +70,11 @@ contract Minter is AdminRole {
         // Get the current CSTK balance of the recipient account.
         uint256 recipientBalance = cstkToken.balanceOf(recipient);
 
+        // It's activating membership too
+        if (recipientBalance == 0) {
+            toMint = toMint + registry.consumePendingBalance(recipient);
+        }
+
         // The recipient cannot receive more than the following amount of tokens:
         // maxR := maxTrust[recipient] * TOTAL_SUPPLY / 10000000.
         uint256 maxToReceive = maxTrust.mul(totalSupply).div(

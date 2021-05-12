@@ -179,13 +179,20 @@ contract Registry is Context, AdminRole {
         pendingBalances[_adr] = _pendingBalance;
     }
 
-    function clearPendingBalance(address _adr) external onlyMinter {
+    function consumePendingBalance(address _adr)
+        external
+        onlyMinter
+        returns (uint256 memory pendingBalance)
+    {
         require(
             _adr != address(0),
-            "Cannot set pending balance for zero balance"
+            "Cannot consume pending balance for zero balance"
         );
 
+        pendingBalance = pendingBalance[_addr];
         delete pendingBalances[_adr];
+
+        return pendingBalance;
     }
 
     //
