@@ -172,7 +172,6 @@ contract Registry is Context, AdminRole {
 
         emit MinterContractSet(_minterContract);
     }
-
     // @notice Set pending balance of an address
     // @param _adr (address) Address to set
     // @param _pendingBalance (uint256) Pending balance of the address
@@ -180,19 +179,25 @@ contract Registry is Context, AdminRole {
         external
         onlyAdmin
     {
-        require(
-            _adr != address(0),
-            "Cannot set pending balance for zero balance"
-        );
-        require(maxTrusts[_adr] != 0, "Address is not a contributor");
-        require(
-            cstkToken.balanceOf(_adr) == 0,
-            "User has activated his membership"
-        );
+        _setPendingBalance(_adr, _pendingBalance);
+    }
 
-        pendingBalances[_adr] = _pendingBalance;
+    /// @notice Set a list of contributors pending balance
+    /// @dev Can only be called by Admin role.
+    /// @param _cnt (uint256) Number of contributors to set pending balance
+    /// @param _adrs (address[]) Addresses to set pending balance
+    /// @param _pendingBalances (uint256[]) Pending balance values to set to each contributor (in order)
+    function setPendingBalances(
+        uint256 _cnt,
+        address[] calldata _adrs,
+        uint256[] calldata _pendingBalances
+    ) external onlyAdmin {
+        require(_adrs.length == _cnt, "Invalid number of addresses");
+        require(_pendingBalances.length == _cnt, "Invalid number of trust values");
 
-        emit PendingBalanceChanged(_adr, _pendingBalance);
+        for (uint256 i = 0; i < _cnt; i++) {
+            _setPendingBalance(_adrs[i], _pendingBalances[i]);
+        }
     }
 
     function clearPendingBalance(address _adr)
@@ -236,5 +241,21 @@ contract Registry is Context, AdminRole {
         delete pendingBalances[_adr];
 
         emit ContributorRemoved(_adr);
+    }
+
+    function _setPendingBalance(address _adr, uint256 _pendingBalance) internal {
+        require(
+            _adr != address(0),
+            "Cannot set pending balance for zero balance"
+        );
+        require(maxTrusts[_adr] != 0, "Address is not a contributor");
+        require(
+            cstkToken.balanceOf(_adr) == 0,
+            "User has activated his membership"
+        );
+
+        pendingBalances[_adr] = _pendingBalance;
+
+        emit PendingBalanceChanged(_adr, _pendingBalance);
     }
 }

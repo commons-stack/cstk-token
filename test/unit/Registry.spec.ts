@@ -167,9 +167,14 @@ describe("Test Registry", function () {
 
     it("Should revert if is not called by an Admin role", async function () {
       await registry.registerContributor(other, eth("1"));
+      await registry.registerContributor(otherSecond, eth("1"));
+
       const otherSecondSigner = ethers.provider.getSigner(otherSecond);
       await expect(
         registry.connect(otherSecondSigner).setPendingBalance(other, eth("1")),
+      ).to.be.revertedWith("AdminRole: caller does not have the Admin role");
+      await expect(
+        registry.connect(otherSecondSigner).setPendingBalances(1, [otherSecond], [eth("2")]),
       ).to.be.revertedWith("AdminRole: caller does not have the Admin role");
     });
 
@@ -179,6 +184,23 @@ describe("Test Registry", function () {
         .to.emit(registry, "PendingBalanceChanged")
         .withArgs(other, eth("3"));
       expect(await registry.getPendingBalance(other)).to.eq(eth("3"));
+    });
+
+    it("Should change a multiple valid pending balance", async function () {
+      const maxTrusts = [eth("1"), eth("2"), eth("3"), eth("4")];
+      await registry.registerContributors(4, contributors, maxTrusts);
+
+      const pendingBalances = [eth("1"), eth("2"), eth("3"), eth("4")];
+      await expect(
+        registry.setPendingBalances(4, contributors, pendingBalances),
+        "Pending balance is not set",
+      ).to.be.ok;
+
+      for (let i = 0; i < contributors.length; i++) {
+        const contributor = contributors[i];
+        const pendingBalance = pendingBalances[i];
+        expect(await registry.getPendingBalance(contributor)).to.eq(pendingBalance);
+      }
     });
 
     it("Should revert if address is zero", async function () {
