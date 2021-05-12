@@ -1,10 +1,13 @@
-import { deployments, ethers, getNamedAccounts } from "@nomiclabs/buidler";
+import { deployments, ethers, getNamedAccounts } from "hardhat";
 import { expect, use } from "chai";
 
-import { AddressZero } from "ethers/constants";
-import { Registry } from "../../build/types/Registry";
-import { parseEther as eth } from "ethers/utils";
+import { constants } from "ethers";
+// import { Registry } from "../../build/types/Registry";
+import { parseEther as eth } from "ethers/lib/utils";
 import { solidity } from "ethereum-waffle";
+import { Contract } from "ethers/lib/ethers";
+
+const { AddressZero } = constants;
 
 use(solidity);
 
@@ -13,7 +16,7 @@ describe("Test Registry", function () {
   let contributors: string[];
   let other: string;
 
-  let registry: Registry;
+  let registry: Contract;
 
   beforeEach(async function () {
     await deployments.fixture();
@@ -30,7 +33,7 @@ describe("Test Registry", function () {
     ];
 
     const deployment = await deployments.get("Registry");
-    registry = (await ethers.getContractAt("Registry", deployment.address)) as Registry;
+    registry = await ethers.getContractAt("Registry", deployment.address); // as Registry;
   });
 
   it("Should set the correct admins", async function () {
@@ -146,7 +149,7 @@ describe("Test Registry", function () {
     it("Should return the right contributor info", async function () {
       const got = await registry.getContributorInfo();
       expect(got.contributors).to.deep.eq(contributors);
-      expect(got.trusts).to.deep.eq(trusts);
+      expect(got.trusts.map((t) => t.toString())).to.deep.eq(trusts.map((t) => t.toString()));
     });
   });
 });

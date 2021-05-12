@@ -1,13 +1,12 @@
-import { AddressZero } from "ethers/constants";
-import { DAIMock } from "../build/types/DAIMock";
-import { task } from "@nomiclabs/buidler/config";
-import { types } from "@nomiclabs/buidler/config";
+import { constants } from "ethers";
+// import { DAIMock } from "../build/types/DAIMock";
+import { task, types } from "hardhat/config";
 
 task("mint-dai", "Mint test DAI tokens to an account")
   .addPositionalParam("account", "Beneficiary address", undefined, types.string)
   .addPositionalParam("amount", "Amount of DAI to mint", undefined, types.string)
-  .setAction(async ({ account, amount }, bre) => {
-    if (account === AddressZero) {
+  .setAction(async ({ account, amount }, hre) => {
+    if (account === constants.AddressZero) {
       console.error("Cannot mint to zero address");
       return;
     }
@@ -16,9 +15,9 @@ task("mint-dai", "Mint test DAI tokens to an account")
       return;
     }
 
-    const { ethers, deployments, network } = bre;
+    const { ethers, deployments, network } = hre;
     const mockAddress = (await deployments.get("DAIMock")).address;
-    const token = (await ethers.getContractAt("DAIMock", mockAddress)) as DAIMock;
+    const token = await ethers.getContractAt("DAIMock", mockAddress); // as DAIMock;
 
     console.log(`Minting ${amount} DAI => ${account} on contract [${network.name}] ${mockAddress}`);
 

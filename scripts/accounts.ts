@@ -1,6 +1,6 @@
 import { Wallet, utils } from "ethers";
 
-interface BuidlerNetworkAccount {
+interface HardHatNetworkAccount {
   privateKey: string;
   balance: string;
 }
@@ -8,7 +8,7 @@ interface BuidlerNetworkAccount {
 const DEFAULT_WALLET_HDPATH = "m/44'/60'/0'/0/";
 
 /**
- * Generate an array of BuidlerNetworkAccounts from a given mnemonic.
+ * Generate an array of HardHatNetworkAccounts from a given mnemonic.
  * Useful for initailizing buidlerevm.
  * @param mnemonic <string> Mnemonic seed (usually from env)
  * @param count <number> Accounts to generate
@@ -18,8 +18,8 @@ export function generate(
   mnemonic: string,
   count: number,
   balance: number,
-): BuidlerNetworkAccount[] {
-  const accounts: BuidlerNetworkAccount[] = new Array(count);
+): HardHatNetworkAccount[] {
+  const accounts: HardHatNetworkAccount[] = new Array(count);
   for (let i = 0; i < count; i++) {
     const hdPath = DEFAULT_WALLET_HDPATH + i;
     const wallet = Wallet.fromMnemonic(mnemonic, hdPath);

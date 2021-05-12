@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BuidlerRuntimeEnvironment } from "@nomiclabs/buidler/types";
-import bre from "@nomiclabs/buidler";
+import { DeployFunction } from "hardhat-deploy/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types/runtime";
+import * as hre from "hardhat";
 
-function fixProvider(env: BuidlerRuntimeEnvironment): void {
+function fixProvider(env: HardhatRuntimeEnvironment): void {
   // alow it to be used by ethers without any change
-  const provider = env.ethereum as any;
+  const provider = env.network.provider;
   if (provider.sendAsync === undefined) {
     provider.sendAsync = (
       req: {
@@ -23,4 +24,4 @@ function fixProvider(env: BuidlerRuntimeEnvironment): void {
   }
 }
 
-fixProvider(bre);
+fixProvider(hre);
