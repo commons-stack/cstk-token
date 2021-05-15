@@ -118,6 +118,7 @@ contract Registry is Context, AdminRole {
     ) external onlyAdmin {
         require(_adrs.length == _cnt, "Invalid number of addresses");
         require(_trusts.length == _cnt, "Invalid number of trust values");
+        require(_pendingBalances.length == _cnt, "Invalid number of pending balance values");
 
         for (uint256 i = 0; i < _cnt; i++) {
             _register(_adrs[i], _trusts[i], _pendingBalances[i]);

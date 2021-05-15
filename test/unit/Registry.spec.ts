@@ -134,6 +134,12 @@ describe("Test Registry", function () {
       ).to.be.revertedWith("Invalid number of trust values");
     });
 
+    it("Should revert if invalid number of pending balance values", async function () {
+      await expect(
+        registry.registerContributors(2, [other, otherSecond], [eth("1"), eth("2")], [eth("3")]),
+      ).to.be.revertedWith("Invalid number of pending balance values");
+    });
+
     it("Should revert if contributors are duplicated", async function () {
       await expect(
         registry.registerContributors(
