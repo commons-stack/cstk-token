@@ -118,7 +118,10 @@ contract Registry is Context, AdminRole {
     ) external onlyAdmin {
         require(_adrs.length == _cnt, "Invalid number of addresses");
         require(_trusts.length == _cnt, "Invalid number of trust values");
-        require(_pendingBalances.length == _cnt, "Invalid number of pending balance values");
+        require(
+            _pendingBalances.length == _cnt,
+            "Invalid number of pending balance values"
+        );
 
         for (uint256 i = 0; i < _cnt; i++) {
             _register(_adrs[i], _trusts[i], _pendingBalances[i]);
@@ -285,7 +288,7 @@ contract Registry is Context, AdminRole {
 
     function _remove(address _adr) internal {
         require(_adr != address(0), "Cannot remove zero address");
-        require(maxTrusts[_adr] != 0, "Address is not a contributor");
+        require(EnumerableSet.contains(accounts, _adr), "Address is not a contributor");
 
         EnumerableSet.remove(accounts, _adr);
         delete maxTrusts[_adr];
@@ -301,7 +304,7 @@ contract Registry is Context, AdminRole {
             _adr != address(0),
             "Cannot set pending balance for zero balance"
         );
-        require(maxTrusts[_adr] != 0, "Address is not a contributor");
+        require(EnumerableSet.contains(accounts, _adr), "Address is not a contributor");
         require(
             cstkToken.balanceOf(_adr) == 0,
             "User has activated his membership"
@@ -317,7 +320,7 @@ contract Registry is Context, AdminRole {
             _adr != address(0),
             "Cannot set pending balance for zero balance"
         );
-        require(maxTrusts[_adr] != 0, "Address is not a contributor");
+        require(EnumerableSet.contains(accounts, _adr), "Address is not a contributor");
         require(
             cstkToken.balanceOf(_adr) == 0,
             "User has activated his membership"
