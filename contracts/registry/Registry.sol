@@ -253,10 +253,7 @@ contract Registry is Context, AdminRole {
     }
 
     function clearPendingBalance(address _adr) external onlyMinter {
-        require(
-            _adr != address(0),
-            "Cannot consume pending balance for zero balance"
-        );
+        require(EnumerableSet.contains(accounts, _adr), "Address is not a contributor");
 
         uint256 pendingBalance = balances[_adr];
         delete balances[_adr];
@@ -287,7 +284,6 @@ contract Registry is Context, AdminRole {
     }
 
     function _remove(address _adr) internal {
-        require(_adr != address(0), "Cannot remove zero address");
         require(EnumerableSet.contains(accounts, _adr), "Address is not a contributor");
 
         EnumerableSet.remove(accounts, _adr);
@@ -300,10 +296,6 @@ contract Registry is Context, AdminRole {
     function _setPendingBalance(address _adr, uint256 _pendingBalance)
         internal
     {
-        require(
-            _adr != address(0),
-            "Cannot set pending balance for zero balance"
-        );
         require(EnumerableSet.contains(accounts, _adr), "Address is not a contributor");
         require(
             cstkToken.balanceOf(_adr) == 0,
@@ -316,10 +308,6 @@ contract Registry is Context, AdminRole {
     }
 
     function _addPendingBalance(address _adr, uint256 _value) internal {
-        require(
-            _adr != address(0),
-            "Cannot set pending balance for zero balance"
-        );
         require(EnumerableSet.contains(accounts, _adr), "Address is not a contributor");
         require(
             cstkToken.balanceOf(_adr) == 0,

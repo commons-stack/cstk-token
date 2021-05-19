@@ -91,7 +91,7 @@ describe("Test Registry", function () {
 
     it("Should revert if address is zero address", async function () {
       await expect(registry.removeContributor(AddressZero)).to.be.revertedWith(
-        "Cannot remove zero address",
+        "Address is not a contributor",
       );
     });
 
@@ -249,7 +249,7 @@ describe("Test Registry", function () {
 
     it("Should revert if address is zero", async function () {
       await expect(registry.setPendingBalance(AddressZero, eth("1"))).to.be.revertedWith(
-        "Cannot set pending balance for zero balance",
+        "Address is not a contributor",
       );
     });
 
