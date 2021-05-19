@@ -1,7 +1,8 @@
-import { BuidlerRuntimeEnvironment, DeployFunction } from "@nomiclabs/buidler/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
 
-const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
-  const { deployments, getNamedAccounts } = bre;
+const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
+  const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
 
   const {
@@ -59,7 +60,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   console.log(`DrainVault Receiver: ${drainVaultReceiver}`);
 
   const { address, receipt } = await deploy("RCSTKToken", {
-    contractName: "RCSTKToken",
+    contract: "RCSTKToken",
     from: deployer,
     args: [
       numerators,
@@ -76,7 +77,7 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
     ],
   });
 
-  console.log(`\nRSCTK Token deployed to ${bre.network.name}\n`);
+  console.log(`\nRSCTK Token deployed to ${hre.network.name}\n`);
   console.log(`Deploy tx: ${receipt.transactionHash}`);
   console.log(`Address: ${address}\n`);
 };

@@ -1,7 +1,8 @@
-import { BuidlerRuntimeEnvironment, DeployFunction } from "@nomiclabs/buidler/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
 
-const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
-  const { deployments, getNamedAccounts } = bre;
+const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
+  const { deployments, getNamedAccounts } = hre;
   const { deployer } = await getNamedAccounts();
   const { deploy } = deployments;
 
@@ -10,11 +11,11 @@ const func: DeployFunction = async (bre: BuidlerRuntimeEnvironment) => {
   console.log("===================================");
 
   const { address, receipt } = await deploy("CSTKTokenManagerMock", {
-    contractName: "CSTKTokenManagerMock",
+    contract: "CSTKTokenManagerMock",
     from: deployer,
   });
 
-  console.log(`\nMock CSTK Token Manager deployed to ${bre.network.name}\n`);
+  console.log(`\nMock CSTK Token Manager deployed to ${hre.network.name}\n`);
   console.log(`Deploy tx: ${receipt.transactionHash}`);
   console.log(`Address: ${address}\n`);
 };

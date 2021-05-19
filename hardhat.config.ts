@@ -1,15 +1,17 @@
-import { BuidlerConfig, task, usePlugin } from "@nomiclabs/buidler/config";
+import { HardhatUserConfig, task } from "hardhat/config";
 import { generate, get } from "./scripts/accounts";
 
 import { remove } from "fs-extra";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
 
-require("dotenv-safe").config();
+import "hardhat-deploy";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
 
-usePlugin("@nomiclabs/buidler-ethers");
-usePlugin("@nomiclabs/buidler-etherscan");
-usePlugin("buidler-deploy");
-usePlugin("buidler-gas-reporter");
-usePlugin("solidity-coverage");
+require("dotenv-safe").config({
+  allowEmptyValues: true,
+});
 
 require("./scripts/trustedAccounts");
 require("./scripts/addTrusted");
@@ -26,7 +28,7 @@ const SOLC_VERSION = process.env.SOLC_VERSION || "";
 const SOLC_OPTIMIZER_ENABLED = process.env.SOLC_OPTIMIZER_ENABLED === "true";
 const GAS_REPORTER_ENABLED = process.env.GAS_REPORTER_ENABLED === "true";
 
-const config: BuidlerConfig = {
+const config: HardhatUserConfig = {
   paths: {
     artifacts: "build/contracts",
     cache: "build/cache",
@@ -35,7 +37,7 @@ const config: BuidlerConfig = {
     tests: "test",
   },
   networks: {
-    buidlerevm: {
+    hardhat: {
       accounts: generate(MNEMONIC, DEVCHAIN_ACCOUNT_NUM, DEVCHAIN_BALANCE_ETH),
     },
     local: {
@@ -61,21 +63,24 @@ const config: BuidlerConfig = {
     drainVaultReceiver: { default: 0 },
     escapeHatchCaller: { default: 0 },
     escapeHatchDestination: { default: 0 },
-    other: { default: 9 },
+    other: { default: 8 },
+    otherSecond: { default: 9 },
   },
-  solc: {
+  solidity: {
     version: SOLC_VERSION,
-    optimizer: {
-      runs: 200,
-      enabled: SOLC_OPTIMIZER_ENABLED,
+    settings: {
+      optimizer: {
+        runs: 200,
+        enabled: SOLC_OPTIMIZER_ENABLED,
+      },
     },
   },
   gasReporter: {
     enabled: GAS_REPORTER_ENABLED,
-    artifactType: "buidler-v1",
+    // artifactType: "buidler-v1",
   },
   etherscan: {
-    url: "https://api.etherscan.io/api",
+    // url: "https://api.etherscan.io/api",
     apiKey: ETHERSCAN_API_KEY,
   },
 };

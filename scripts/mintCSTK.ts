@@ -1,12 +1,13 @@
-import { AddressZero } from "ethers/constants";
-import { CSTKTokenManagerMock } from "../build/types/CSTKTokenManagerMock";
-import { task } from "@nomiclabs/buidler/config";
-import { types } from "@nomiclabs/buidler/config";
+import { constants } from "ethers";
+// import { CSTKTokenManagerMock } from "../build/types/CSTKTokenManagerMock";
+import { task, types } from "hardhat/config";
+
+const { AddressZero } = constants;
 
 task("mint-cstk", "Mint test CSTK tokens to an account")
   .addPositionalParam("account", "Beneficiary address", undefined, types.string)
   .addPositionalParam("amount", "Amount of CSTK to mint", undefined, types.string)
-  .setAction(async ({ account, amount }, bre) => {
+  .setAction(async ({ account, amount }, hre) => {
     if (account === AddressZero) {
       console.error("Cannot mint to zero address");
       return;
@@ -16,12 +17,9 @@ task("mint-cstk", "Mint test CSTK tokens to an account")
       return;
     }
 
-    const { ethers, deployments, network } = bre;
+    const { ethers, deployments, network } = hre;
     const mockAddress = (await deployments.get("CSTKTokenManagerMock")).address;
-    const token = (await ethers.getContractAt(
-      "CSTKTokenManagerMock",
-      mockAddress,
-    )) as CSTKTokenManagerMock;
+    const token = await ethers.getContractAt("CSTKTokenManagerMock", mockAddress); // as CSTKTokenManagerMock;
 
     console.log(
       `Minting ${amount} CSTK => ${account} on contract [${network.name}] ${mockAddress}`,

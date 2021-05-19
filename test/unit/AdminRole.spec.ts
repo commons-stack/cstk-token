@@ -1,8 +1,9 @@
-import { deployments, ethers, getNamedAccounts } from "@nomiclabs/buidler";
+import { deployments, ethers, getNamedAccounts } from "hardhat";
 import { expect, use } from "chai";
 
-import { AdminRoleMock } from "../../build/types/AdminRoleMock";
+// import { AdminRoleMock } from "../../build/types/AdminRoleMock";
 import { solidity } from "ethereum-waffle";
+import { Contract } from "ethers/lib/ethers";
 
 use(solidity);
 
@@ -11,7 +12,7 @@ describe("Testing AdminRole contract", function () {
   let adminFirst: string;
   let other: string;
 
-  let adminRole: AdminRoleMock;
+  let adminRole: Contract;
 
   beforeEach(async function () {
     await deployments.fixture();
@@ -22,7 +23,7 @@ describe("Testing AdminRole contract", function () {
     other = accounts.other;
 
     const deployment = await deployments.get("TestAdminRole");
-    adminRole = (await ethers.getContractAt("AdminRoleMock", deployment.address)) as AdminRoleMock;
+    adminRole = await ethers.getContractAt("AdminRoleMock", deployment.address); // as AdminRoleMock;
   });
 
   describe("When deploying contract", function () {

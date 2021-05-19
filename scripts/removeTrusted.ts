@@ -1,13 +1,15 @@
-import { task, types } from "@nomiclabs/buidler/config";
+import { task, types } from "hardhat/config";
+import "@nomiclabs/hardhat-waffle";
+import "hardhat-deploy";
 
-import { Registry } from "../build/types/Registry";
+// import { Registry } from "../build/types/Registry";
 
 task("remove-trusted", "Remove a trusted account from the registry")
   .addPositionalParam("account", "Address of an exisitng trusted account", undefined, types.string)
-  .setAction(async ({ account }, bre) => {
-    const { ethers, deployments, network } = bre;
+  .setAction(async ({ account }, hre) => {
+    const { ethers, deployments, network } = hre;
     const registryAddress = (await deployments.get("Registry")).address;
-    const registry = (await ethers.getContractAt("Registry", registryAddress)) as Registry;
+    const registry = await ethers.getContractAt("Registry", registryAddress); // as Registry;
 
     console.log(`Connected to Registry contract: [${network.name}] ${registryAddress}`);
     console.log(`Removing trusted account ${account}`);

@@ -1,11 +1,17 @@
 import { ContractTransaction, utils } from "ethers";
-import { deployments, ethers, getNamedAccounts } from "@nomiclabs/buidler";
+import { deployments, ethers, getNamedAccounts } from "hardhat";
 import { expect, use } from "chai";
 
-import { AddressZero } from "ethers/constants";
-import { DAIMock } from "../../build/types/DAIMock";
-import { TokenBank } from "../../build/types/TokenBank";
+import "hardhat-deploy";
+import "@nomiclabs/hardhat-ethers";
+
+import { constants } from "ethers";
+// import { DAIMock } from "../../build/types/DAIMock";
+// import { TokenBank } from "../../build/types/TokenBank";
 import { solidity } from "ethereum-waffle";
+import { Contract } from "ethers/lib/ethers";
+
+const { AddressZero } = constants;
 
 use(solidity);
 
@@ -17,8 +23,8 @@ describe("Testing TokenBank contract", function () {
   //   let admins: string[];
   let other: string;
 
-  let dai: DAIMock;
-  let bank: TokenBank;
+  let dai: Contract;
+  let bank: Contract;
 
   beforeEach(async function () {
     await deployments.fixture();
@@ -29,10 +35,10 @@ describe("Testing TokenBank contract", function () {
     other = accounts.other;
 
     const daiDeployment = await deployments.get("DAIMock");
-    dai = (await ethers.getContractAt("DAIMock", daiDeployment.address)) as DAIMock;
+    dai = await ethers.getContractAt("DAIMock", daiDeployment.address); // as DAIMock;
 
     const bankDeployment = await deployments.get("TokenBank");
-    bank = (await ethers.getContractAt("TokenBank", bankDeployment.address)) as TokenBank;
+    bank = await ethers.getContractAt("TokenBank", bankDeployment.address); // as TokenBank;
   });
 
   describe("When deploying TokenBank", function () {
